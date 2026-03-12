@@ -200,7 +200,7 @@ Inductive bsem_expr : program -> vmap -> Memory.mem -> BeePL.expr -> Memory.mem 
                bsem_expr p vm m e m' vm (Vloc l ofs) ->
                deref_addr (typeof_expr e) m' l ofs Full v ->
                bsem_expr p vm m (Prim Deref (e :: nil) (typeof_expr e)) m' vm v
-| bsem_massgn : forall p vm m e1 m' l ofs bf e2 m'' v v' pt ct1 ct2,  
+| bsem_massgn : forall p vm m e1 m' l ofs e2 m'' v v' pt ct1 ct2 m''',  
                 bsem_expr p vm m e1 m' vm (Vloc l ofs) ->
                 bsem_expr p vm m' e2 m'' vm v ->
                 transBeePL_type (typeof_expr e1) = ct1  ->
@@ -208,8 +208,9 @@ Inductive bsem_expr : program -> vmap -> Memory.mem -> BeePL.expr -> Memory.mem 
                 typeof_expr e1 = Ptrtype pt ->
                 typeof_expr e2 = get_data_type pt ->
                 sem_cast (trans_bvalue_cvalue v) ct2 ct1 m = Some (trans_bvalue_cvalue v') ->
-                assign_addr ge (typeof_expr e1) m l ofs bf v' m' v' -> 
-                bsem_expr p vm m (Prim Massgn (e1 :: e2 :: nil) Utype) m'' vm Vunit
+                assign_addr ge (typeof_expr e1) m'' l ofs Full v' m''' v' -> 
+                chunk_for_volatile_type (transBeePL_type (typeof_expr e1)) Full = None ->
+                bsem_expr p vm m (Prim Massgn (e1 :: e2 :: nil) (typeof_expr e1)) m''' vm v'
 | bsem_uop : forall p vm m e v uop m' v' ct v'',
              bsem_expr p vm m e m' vm v ->
              transBeePL_type (typeof_expr e) = ct ->

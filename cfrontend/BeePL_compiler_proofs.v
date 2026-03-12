@@ -43,6 +43,7 @@ Definition fctx_fresh_in_ff (ff : seq (ident * type * string)) : Prop :=
     (* 2) all fresh / produced locals are in ff *)
     fctx_subset fctx' ff.
 
+
 (* ---------------------------------------------------------------------- *)
 (* Well-formed env: adds fctx + injectivity guarantees                    *)
 (* ---------------------------------------------------------------------- *)
@@ -812,11 +813,14 @@ match e with
 end.
 
 (* Insights about Cstrategy: 
-   In Cstrategy, a bare variable (Evar) is never evaluated as a value; 
-   we always need Evalof (Evar …) to turn it into an r-value and then load its contents. 
-   A big-step semantics produces a value, only by treating l-value as r-value using Evalof *) 
-(* Lifts arbitrary C expressions into the “pure rvalue” fragment that matches our BeePL semantics, 
-   which always returns a value *)
+   In Csyntax, a bare variable [Evar] denotes an l-value, not a computed value.
+   To read the variable’s contents, we must explicitly coerce it to an r-value
+   using [Evalof]. More generally, the big-step evaluation relation returns a
+   value only after l-values are turned into r-values through [Evalof]. *)
+
+(* This function lifts C expressions into the r-value fragment so that they
+   match BeePL semantics, where expression evaluation always produces a value
+   and there is no explicit lvalue/rvalue distinction. *)
 Fixpoint convert_to_rval (e : Csyntax.expr) : Csyntax.expr :=
 match e with 
 | Csyntax.Evar x t => Evalof (Csyntax.Evar x t) t
@@ -1343,7 +1347,34 @@ apply bsem_exprs_bsem_expr_ind_mut=> //=.
   have := deref_addr_translated cge (typeof_expr e) m' l ofs Full v (transBeePL_type (typeof_expr e)) (trans_bvalue_cvalue v) hd erefl erefl.  case hc: (chunk_for_volatile_type (transBeePL_type (typeof_expr e)) Full)=> [c | ] //=.
   move=> [] tr' [] _ hvo. by rewrite /chunk_for_volatile_type H1 /= in hc.
 (* massgn *)
-+ admit.
++ move=> p vm m e1 m' l ofs e2 m'' v v' pt ct1 ct2 m''' he1 hin1 he2 hin2 hte1 hte2 ht1 ht2 hcast ha hvo 
+         cp cge fctx bctx ce.
+  move=> cvm fctx' bctx' g g' i' fctxf hp he hwf hf.
+  have [htr1 htr2] := trans_expr_expr_ind.
+  move: (htr1 (Prim Massgn [:: e1; e2] (typeof_expr e1)) fctx bctx ce fctx' bctx' g g' i' he)=> [] ces [] g1 [] i1 [] hes h1; subst.
+  move: (htr2 [:: e1; e2] fctx bctx ces fctx' bctx' g g1 i1 hes)=> [] ce1 [] f1 [] b1 [] g2 [] i2 [] i3 [] ces1 [] f2 [] b2.
+  move=> [] hce1 [] hces [] h1 [] h2 h3; subst.
+  have := trans_exprs_to_trans_expr e2 f1 b1 g2 ces1 f2 b2 g1 i3 hces. move=> [] ce2 [] g3 [] i4 [] hce2 h1; subst.
+  clear htr1. clear htr2. clear he. move: (hin1 cp cge fctx bctx ce1 cvm f1 b1 g g2 i2 fctxf hp hce1 hwf hf)=> [] tr1 hc1.
+  have hwf' := trans_expr_preserves_wf_env. move: (hwf' vm cvm)=> [] hwf1 hwf2.
+  move: (hwf1 e1 fctx bctx ce1 f1 b1 g g2 i2 hwf hce1)=> hwf1'. 
+  move: (hin2 cp cge f1 b1 (hd default_expr (exprlist_list_expr ces1)) cvm f2 b2 g2 g3 i4 fctxf hp hce2 hwf1' hf).
+  move=> [] tr2 hc2. rewrite /=. have := assign_addr_translated bge cge (typeof_expr e1) m'' l ofs Full v' m''' 
+   (transBeePL_type (typeof_expr e1)) (trans_bvalue_cvalue v') v' (trans_bvalue_cvalue v') ha erefl erefl erefl.
+  rewrite hvo /=. move=> hca. inversion hc1; subst; inversion hc2; subst.
+  exists (tr1++tr2++Events.E0). 
+  apply eval_expression_intro with (Eval (trans_bvalue_cvalue v) 
+                                      (transBeePL_type (typeof_expr e1))).
+  + apply eval_assign with m' (Csyntax.Ederef a' (Csyntax.typeof ce1)) m'' a'0 l ofs Full 
+                           (trans_bvalue_cvalue v) (trans_bvalue_cvalue v').
+    + apply eval_deref. admit.
+    + by apply H1.
+    + apply esl_deref. admit.
+    + admit.
+    + admit.
+    admit. admit.
+   admit.
+  
 (* uop *) (* done *)
 + move=> p vm m e v uop m' v' ct v'' hse hin he huop hv cp cge fctx bctx ce cvm fctx' bctx' g g' i' ff hp hte hwf hsf.
   have [htr1 htr2] := trans_expr_expr_ind.
