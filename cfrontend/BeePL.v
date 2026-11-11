@@ -321,7 +321,7 @@ end.
  
 Fixpoint in_vars (x : ident) (xs : list ident) : bool :=
 match xs with 
-| nil => true
+| nil => false
 | y :: ys => if ident_eq x y then true else in_vars x ys
 end.
 

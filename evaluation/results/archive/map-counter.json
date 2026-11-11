@@ -1,0 +1,110 @@
+{
+  "timestamp_utc": "2026-11-11T00:33:20.972410+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "bab6b756bb9f34093d9ca90f90fbd1d302ce76921a4fa5c7f6ded6818b366e41",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "xdp_map_counter",
+      "source": "evaluation/examples/xdp_map_counter.bpl",
+      "source_sha256": "3cfb3cd3b0fb1d3de6920aae1d8bde4d927e31091f66685a5fca1e7f0c920bcc",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "packet_1",
+          "actual": 2,
+          "expected": [
+            2
+          ],
+          "map_key": 0,
+          "map_total": 1,
+          "expected_map_total": 1,
+          "nonzero_cpu_values": {
+            "0": 1
+          },
+          "packet_preserved": true,
+          "duration_ns": 537,
+          "passed": true
+        },
+        {
+          "case": "packet_2",
+          "actual": 2,
+          "expected": [
+            2
+          ],
+          "map_key": 0,
+          "map_total": 2,
+          "expected_map_total": 2,
+          "nonzero_cpu_values": {
+            "0": 2
+          },
+          "packet_preserved": true,
+          "duration_ns": 48,
+          "passed": true
+        },
+        {
+          "case": "packet_3",
+          "actual": 2,
+          "expected": [
+            2
+          ],
+          "map_key": 0,
+          "map_total": 3,
+          "expected_map_total": 3,
+          "nonzero_cpu_values": {
+            "0": 3
+          },
+          "packet_preserved": true,
+          "duration_ns": 35,
+          "passed": true
+        },
+        {
+          "case": "packet_4",
+          "actual": 2,
+          "expected": [
+            2
+          ],
+          "map_key": 0,
+          "map_total": 4,
+          "expected_map_total": 4,
+          "nonzero_cpu_values": {
+            "0": 4
+          },
+          "packet_preserved": true,
+          "duration_ns": 46,
+          "passed": true
+        },
+        {
+          "case": "packet_5",
+          "actual": 2,
+          "expected": [
+            2
+          ],
+          "map_key": 0,
+          "map_total": 5,
+          "expected_map_total": 5,
+          "nonzero_cpu_values": {
+            "0": 5
+          },
+          "packet_preserved": true,
+          "duration_ns": 64,
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "xdp",
+      "object_sha256": "604e54048dcd4a6b7822fc8be45349aa2cf1283b87ea9612c37fdc24ad8dbeda",
+      "map_metadata": {
+        "type": 6,
+        "key_size": 4,
+        "value_size": 8,
+        "max_entries": 1
+      }
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

@@ -92,7 +92,7 @@ let collect_global_env
 
     (* NEW: .maps structs also introduce a name (placeholder type for now) *)
     | Beepl_ast.StructDecl (name, _fields, sec) when is_maps_section sec ->
-        Some (name, Beepl_ast.Vtype Beepl_ast.Tulong)
+        Some (name, Beepl_maps.handle_type)
 
     (* normal structs do not introduce values *)
     | Beepl_ast.StructDecl (_, _, _) ->
@@ -515,8 +515,8 @@ let rec transform_expr (ee: Beepl_ast_typechecker.efenv) (senv : Beepl_ast_typec
       | _ -> failwith "Esome expects a pointer child")
   | Beepl_ast.Enone t ->
       (* rely on the inferred type at this site; it must be Ptr (Otype _) *)
-      (match t with
-       | Ptr (Otype _) -> BeePL.Enone (transform_typ t)
+      (match typ with
+       | Ptr (Otype _) -> BeePL.Enone t'
        | _ -> failwith "Enone must be an option-pointer here")
   
 let rec collect_vars (ee : Beepl_ast_typechecker.efenv) (senv : Beepl_ast_typechecker.Senv.t) (env : Beepl_ast_typechecker.tyenv) (e : Beepl_ast.expr) : (string * Beepl_ast.typ) list =
@@ -621,24 +621,8 @@ let transform_toplevel ee senv global_env = function
     let id = Camlcoq.intern_string name in
     begin match sec with
     | Some s when normalize_section s = ".maps" ->
-      (* Legacy struct bpf_map_def layout (u32 fields):
-        type, key_size, value_size, max_entries, map_flags
-        Pad to 32 bytes to match clang's .zero 32. *)
-
-      let u32 = Beepl_ast.Vtype Beepl_ast.Tuint32 in
-      let t = Beepl_ast.Atype (u32, 8) in  (* 8 * 4 = 32 bytes *)
-
-      let c x = Beepl_ast.Const (Beepl_ast.Cint32 (Int32.of_int x)) in
-      let init =
-        Beepl_ast.Ainit (name, [
-          c 1;      (* BPF_MAP_TYPE_HASH = 1 *)
-          c 8;      (* key_size = 8 bytes (u64) *)
-          c 8;      (* value_size = 8 bytes (u64) *)
-          c 1024;   (* max_entries *)
-          c 0;      (* map_flags *)
-          c 0; c 0; c 0;   (* padding to 32 bytes *)
-        ])
-      in
+      let t = Beepl_maps.handle_type in
+      let init = Beepl_ast.Ainit (name, List.init 8 (fun _ -> Beepl_ast.Const (Beepl_ast.Cint32 0l))) in
       `Global (id, transform_typ t, init, sec)
 
     | _ ->
@@ -740,6 +724,7 @@ let init_data_of_string (s : string) : AST.init_data list =
     (* Build externs as global defs *)
     let external_globals =
       Beepl_ast_typechecker.Env.bindings ee
+      |> List.filter (fun (name, _) -> List.mem name (collect_idents prog))
       |> List.map (fun (name, info) ->
            let coq_id  = Camlcoq.intern_string name in
            let coq_args = List.map transform_typ info.Beepl_ast_typechecker.formals in
@@ -1050,5 +1035,8 @@ let parse_bpl_ast (filename : string) : Beepl_ast.program =
 let parse_and_transform_bpl (filename : string) : BeePL.program =
   let program = parse_bpl_ast filename in
   (* AST typecheck BEFORE lowering to Coq AST *)
-  Beepl_ast_typechecker.infer_program program;
+  (try Beepl_ast_typechecker.infer_program program with
+   | Beepl_ast_typechecker.TypeError msg ->
+       Printf.eprintf "%s: type error: %s\n" filename msg;
+       exit 2);
   transform_program program

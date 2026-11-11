@@ -1,0 +1,485 @@
+{
+  "timestamp_utc": "2026-11-11T00:51:22.577839+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "a8c7f6f1120bad0bd4f3b7d4b91cfe815dee5bfdf615d7a06b8d7ae61e8d7360",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "cgroup_sock_allow",
+      "source": "evaluation/examples/cgroup_sock_allow.bpl",
+      "source_sha256": "66dea0244289fb82b27d02ad94b4182d5d971bb591a0416045d4460725845d2e",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_tcp",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_udp",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_tcp_0",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_udp_0",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_tcp_1",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_udp_1",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_tcp",
+          "socket_type": 1,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_udp",
+          "socket_type": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_tcp",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_udp",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "0212de33d2764c77c0cd62dae14bfa0592e00642fc77d26b851ae0431cb917f1",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    },
+    {
+      "program": "cgroup_sock_deny",
+      "source": "evaluation/examples/cgroup_sock_deny.bpl",
+      "source_sha256": "f963b8d6dbcac736a1ea419a725f731d3e163f1f3053fb0308cf5b6b5ef027c7",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_tcp",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_udp",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_tcp_0",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_udp_0",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_tcp_1",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_udp_1",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_tcp",
+          "socket_type": 1,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_udp",
+          "socket_type": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_tcp",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_udp",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "b4922e2b3dcb9af7c687351bc4178f799669e7a595ce2454ed5ca3649e29a38f",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    },
+    {
+      "program": "cgroup_sock_udp",
+      "source": "evaluation/examples/cgroup_sock_udp.bpl",
+      "source_sha256": "aa8f589d2b22fb2babc01d46ac47aeed2d116eba7e92bb63abb144f9d5573b49",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_tcp",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_udp",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_tcp_0",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_udp_0",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_tcp_1",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_udp_1",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_tcp",
+          "socket_type": 1,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_udp",
+          "socket_type": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_tcp",
+          "socket_type": 1,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_udp",
+          "socket_type": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "011ad5e696d2aafed33681aaa0eefafaa372788dc9419ffbf0a0849be938eeb3",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

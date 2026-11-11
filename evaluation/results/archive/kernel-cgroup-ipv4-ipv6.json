@@ -1,0 +1,1283 @@
+{
+  "timestamp_utc": "2026-11-11T00:56:39.956917+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "a8c7f6f1120bad0bd4f3b7d4b91cfe815dee5bfdf615d7a06b8d7ae61e8d7360",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "cgroup_sock_allow",
+      "source": "evaluation/examples/cgroup_sock_allow.bpl",
+      "source_sha256": "9a80f2a7599c22e4bb31ace2759efdd754ce17b597648e78aa8a029c88426c04",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_0",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_0",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_0",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_0",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_1",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_1",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_1",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_1",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "0212de33d2764c77c0cd62dae14bfa0592e00642fc77d26b851ae0431cb917f1",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    },
+    {
+      "program": "cgroup_sock_deny",
+      "source": "evaluation/examples/cgroup_sock_deny.bpl",
+      "source_sha256": "4416ce6dbd703cd7df36bf3232ddf8432d1b390457878576fa7904131abb8bfe",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_0",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_0",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_0",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_0",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_1",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_1",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_1",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_1",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "b4922e2b3dcb9af7c687351bc4178f799669e7a595ce2454ed5ca3649e29a38f",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    },
+    {
+      "program": "cgroup_sock_ipv4",
+      "source": "evaluation/examples/cgroup_sock_ipv4.bpl",
+      "source_sha256": "ec8b5b142af4b097e745ce173b60a4dafe2d7a0c5b3bf31d8d68f066c204740b",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_0",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_0",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_0",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_0",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_1",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_1",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_1",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_1",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "df5fb18cac48c3689be0be2fd01d01442ed66358c5b9f2608b1e9814f8e98b58",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    },
+    {
+      "program": "cgroup_sock_udp",
+      "source": "evaluation/examples/cgroup_sock_udp.bpl",
+      "source_sha256": "a9947c312d6168aa62e49f789426b2e2f14b250047a5645197aa3c9e83fd459c",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "before_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_0",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_0",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_0",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_0",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_tcp_1",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv4_udp_1",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_tcp_1",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "attached_ipv6_udp_1",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": false,
+            "errno": 1
+          },
+          "expected": {
+            "created": false,
+            "errno": 1
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "outside_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": false,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_tcp",
+          "socket_type": 1,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv4_udp",
+          "socket_type": 2,
+          "family": 2,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_tcp",
+          "socket_type": 1,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        },
+        {
+          "case": "after_ipv6_udp",
+          "socket_type": 2,
+          "family": 10,
+          "inside_cgroup": true,
+          "actual": {
+            "created": true,
+            "errno": 0
+          },
+          "expected": {
+            "created": true,
+            "errno": 0
+          },
+          "passed": true
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "cgroup/sock_create",
+      "object_sha256": "011ad5e696d2aafed33681aaa0eefafaa372788dc9419ffbf0a0849be938eeb3",
+      "attach_metadata": {
+        "type": 9,
+        "attach_type": 2
+      },
+      "execution_mode": "live_cgroup_socket_create"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

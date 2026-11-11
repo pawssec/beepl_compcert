@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-11-11T00:20:24.246741+00:00",
+  "kernel": "7.0.0-42-generic",
+  "programs": [],
+  "passed": false,
+  "namespaces": [
+    "beepl_tc_s_0887c6a5b3",
+    "beepl_tc_r_0887c6a5b3"
+  ],
+  "cleanup_errors": [],
+  "error": "['ip', '-n', 'beepl_tc_s_0887c6a5b3', 'link', 'add', 'tx', 'type', 'veth', 'peer', 'name', 'rx']: exit 255: Error: argument \"type\" is wrong: Invalid \"txqueuelen\" value",
+  "cleanup_complete": true
+}

@@ -407,7 +407,7 @@ let apply_bpf_map_replacements asm_filename =
         let new_line = List.fold_left (fun l (k, v) ->
           (* Use Str.regexp_string to treat key as literal text, not regex
           Str.global_replace (Str.regexp_string k) v l *)
-          let pattern = Str.regexp ("call[ \t]+bpf_" ^ Str.quote k) in
+          let pattern = Str.regexp ("call[ \t]+bpf_" ^ Str.quote k ^ "\\b") in
           Str.global_replace pattern ("call " ^ v) l
         ) line mappings in
         output_string oc_asm (new_line ^ "\n")
@@ -416,9 +416,9 @@ let apply_bpf_map_replacements asm_filename =
 
       ()
     with e ->
-      Printf.eprintf "Error processing -bpfmap: %s\n" (Printexc.to_string e)
+      fatal_error no_loc "Error processing -bpfmap: %s" (Printexc.to_string e)
   end else begin
-    Printf.eprintf "Warning: -bpfmap specified but '%s' not found.\n" map_file
+    fatal_error no_loc "-bpfmap specified but '%s' not found" map_file
   end
 
 
@@ -570,7 +570,11 @@ let populate_decl_atom (section_info : (AST.ident * BeePL_Csyntax.csyntax_atom_i
     set_dest AsmToJSON.destination option_sdump !sdump_suffix;
   
     (* Typecheck BeePL program *)
-    if !option_typecheck then begin
+    let has_ebpf_entry = List.exists (fun ((_, gd), _) ->
+      match gd with
+      | AST.Gfun (BeePL.Internal f) -> f.BeePL.is_ebpf
+      | _ -> false) beepl_program.BeePL.prog_defs in
+    if !option_typecheck || has_ebpf_entry then begin
       let typecheck_result = BeePL_typechecker.type_check_program beepl_program in
       match typecheck_result with
       | Errors.OK s ->
@@ -677,6 +681,7 @@ let populate_decl_atom (section_info : (AST.ident * BeePL_Csyntax.csyntax_atom_i
     AsmToJSON.print_if asm sourcename;
     let oc = open_out ofile in
     PrintAsm.print_program oc asm;
+    if Configuration.arch = "ebpf" then Beepl_maps.emit_btf oc;
     close_out oc;
     if !option_bpfmap then apply_bpf_map_replacements ofile 
 
@@ -1145,6 +1150,9 @@ let cmdline_actions =
   Suffix ".b", Self (fun s ->
     push_action process_b_file s; incr num_source_files; incr num_input_files);
   Suffix ".bpl", Self (fun s ->
+    (* Match the identifiers in BeePL's extracted helper/context definitions.
+       Set this before any input is compiled, including mixed C/BeePL inputs. *)
+    Camlcoq.use_canonical_atoms := true;
     push_action process_bpl_file s; incr num_source_files; incr num_input_files; incr num_bpl_files);
   Suffix ".c", Self (fun s ->
       push_action process_c_file s; incr num_source_files; incr num_input_files);

@@ -418,7 +418,7 @@ end
                    ret (Eaddrof lval ct, fn_ctx, bctx)*) 
                    error (msg "Programmers are never allowed to use raw address")
 (*| Eapp ef ts es t => let cef := befunction_to_cefunction ef in
-                     let cts := (transBeePL_types transBeePL_type ts) in
+                     let cts := map Ctypes.typeconv (transBeePL_types transBeePL_type ts) in
                      let ct := (transBeePL_type t) in
                      do (ces, bctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es venv fn_ctx bctx);
                      ret (Ebuiltin cef cts (fst ces) ct, snd ces, bctx')*)
@@ -699,6 +699,20 @@ Definition set_temp_for_copy
           t_tmp)
        t_tmp).
 
+(* Pbytes introduces both a header value and named field bindings. *)
+Fixpoint bind_buffer_fields (header schema : ident)
+         (fields : list (ident * Ctypes.type)) : Csyntax.statement :=
+  match fields with
+  | nil => Sskip
+  | (field, ty) :: rest =>
+      Ssequence
+        (Sdo (Eassign (Evar field ty)
+          (Evalof (Efield
+            (Evalof (Evar header (Tstruct schema noattr)) (Tstruct schema noattr))
+            field ty) ty) ty))
+        (bind_buffer_fields header schema rest)
+  end.
+
 Fixpoint copy_buffer
          (to   : ident)
          (sto  : ident)
@@ -962,7 +976,7 @@ match e with
                    ret ((Sdo (Eaddrof lval pty)), ctx, bctx) *)
                    error (msg "Programmers are never allowed to use raw address")
 (*| Eapp ef ts es t => let cef := befunction_to_cefunction ef in
-                     let cts := (transBeePL_types transBeePL_type ts) in
+                     let cts := map Ctypes.typeconv (transBeePL_types transBeePL_type ts) in
                      let ct := (transBeePL_type t) in
                      do (ces, ctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es venv ctx bctx);
                      ret (Sdo (Ebuiltin cef cts (fst ces) ct), snd ces, ctx')*)
@@ -1001,6 +1015,15 @@ match e with
                      do (ce3, bctx3) <- transBeePL_expr_st cenv e ctx4 bctx2;
                      do (i, stri) <- (fresh_ident (List.map unzip_ident ctx4) max_fresh);
                      let ctx6 := (i, typeof_expr e1, stri) :: snd ce3 in
+                     (* Inclusive loops must stop at the endpoint BEFORE the
+                        increment/decrement, including unsigned max and zero. *)
+                     let body := Ssequence (fst ce3)
+                       (Sifthenelse
+                         (Ebinop Cop.Oeq
+                           (Evalof (Evar i (typeof (fst ce1))) (typeof (fst ce1)))
+                           (Evalof (Evar high (typeof (fst ce2))) (typeof (fst ce2)))
+                           tint)
+                         Sbreak Sskip) in
                      match d with 
                      | Up => ret (Ssequence (Ssequence (Sdo (Eassign (Evar low (typeof (fst ce1))) (fst ce1) (typeof (fst ce1))))
                                                        (Sdo (Eassign (Evar high (typeof (fst ce2))) (fst ce2) (typeof (fst ce2)))))
@@ -1009,7 +1032,7 @@ match e with
                                                                (Ebinop Cop.Ole (Evalof (Evar i (typeof (fst ce2))) (typeof (fst ce2))) 
                                                                                        (Evar high (typeof (fst ce2))) (typeof (fst ce2)))
                                                                (Sdo (Epostincr Cop.Incr (Evar i (typeof (fst ce2))) (typeof (fst ce2))))
-                                                          (fst ce3))
+                                                          body)
                                                          Sskip), ctx6, bctx3)
                      | Down => ret (Ssequence (Ssequence (Sdo (Eassign (Evar low (typeof (fst ce1))) (fst ce1) (typeof (fst ce1))))
                                                          (Sdo (Eassign (Evar high (typeof (fst ce2))) (fst ce2) (typeof (fst ce2)))))
@@ -1018,7 +1041,7 @@ match e with
                                                                  (Ebinop Cop.Oge (Evalof (Evar i (typeof (fst ce2))) (typeof (fst ce2))) 
                                                                                           (Evar high (typeof (fst ce2))) (typeof (fst ce2)))
                                                                  (Sdo (Epostincr Cop.Decr (Evar i (typeof (fst ce2))) (typeof (fst ce2))))
-                                                            (fst ce3))
+                                                            body)
                                                             Sskip), ctx6, bctx3)
                      end
 | Enone t => match t with 
@@ -1090,6 +1113,15 @@ match e with
             let cxts :=
               zip (unzip1 xts)
                   (transBeePL_types transBeePL_type (unzip2 xts)) in
+            let all_fields :=
+              match cenv!s with
+              | Some co => fold_right
+                  (fun m acc => match m with
+                    | Member_plain name ty => (name, transBeePL_type ty) :: acc
+                    | _ => acc
+                    end) nil co.(co_members)
+              | None => nil
+              end in
 
             (* translate branches first under scrutinee ctx (snd ce) *)
             do (ce1, bctx1) <- transBeePL_expr_st cenv e1 (snd ce) bctx';
@@ -1125,7 +1157,9 @@ match e with
                                 (* tmp = (struct s* p.bytes_start; *)
                                 (set_temp_for_copy tmp t_hdr_ptr p)
                                 (Ssequence
-                                   (copy_buffer x s t_hdr_ptr cxts tmp)
+                                   (Ssequence
+                                     (copy_buffer x s t_hdr_ptr all_fields tmp)
+                                     (bind_buffer_fields x s cxts))
                                    (Ssequence
                                       (incr_bytes_ptr p s)
                                       (fst ce1))))),
@@ -1235,7 +1269,7 @@ match fd with
 | Internal f => do (tf, is') <- transBeePL_function_function cenv f iss bctx;
                 OK (Ctypes.Internal (fst tf), snd tf, is')
 | External ef ts t cc => let cef := (befunction_to_cefunction ef) in
-                         let cts := (transBeePL_types transBeePL_type ts) in 
+                         let cts := map Ctypes.typeconv (transBeePL_types transBeePL_type ts) in
                          let ct := (transBeePL_type t) in
                          OK ((Ctypes.External cef cts ct cc), iss, bctx)
 end.

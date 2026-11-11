@@ -75,6 +75,11 @@ let build_efenv () : efenv =
           effects = [Io];
           ret = (* prefer Tuint64 if you have it *) Vtype Tulong;
           variadic = false }
+  |> Env.add "bpf_skb_change_type"
+        { formals = [Ptr (Reftype (Bstruct "__sk_buff")); Vtype Tuint32];
+          effects = [Write; Io];
+          ret = Vtype Tlong;
+          variadic = false }
   |> Env.add "bpf_get_current_pid_tgid"
         { formals = [];
           effects = [Io];
@@ -98,22 +103,16 @@ let build_efenv () : efenv =
        variadic = false }
 
   |> Env.add "bpf_map_lookup_elem"
-     { formals = [
-         Vtype Tulong;  
-         Vtype Tulong;  
-       ];
-       effects = [Io];
-       ret = Vtype Tulong;
-       variadic = false }
-  
+     { formals = [Beepl_maps.handle_type; Ptr (Reftype (Bprim Tuint32))];
+       effects = [Read; Io]; ret = Ptr (Otype (Reftype (Bprim Tulong))); variadic = false }
   |> Env.add "bpf_map_update_elem"
-     { formals = [ Vtype Tulong; Vtype Tulong; Vtype Tulong; Vtype Tulong ];
-       effects = [Io];
-       ret = Vtype Tint32;
-       variadic = false }
+     { formals = [Beepl_maps.handle_type; Ptr (Reftype (Bprim Tuint32));
+                  Ptr (Reftype (Bprim Tulong)); Vtype Tulong];
+       effects = [Write; Io]; ret = Vtype Tlong; variadic = false }
+  |> Env.add "bpf_map_delete_elem"
+     { formals = [Beepl_maps.handle_type; Ptr (Reftype (Bprim Tuint32))];
+       effects = [Write; Io]; ret = Vtype Tlong; variadic = false }
 
-
-    
 let extern_bindings_of_efenv (ee : efenv) : (string * typ) list =
   Env.bindings ee
   |> List.map (fun (name, info) ->
@@ -182,15 +181,15 @@ let rec typ_eq t1 t2 =
   | Ftype (args1, effs1, ret1, v1), Ftype (args2, effs2, ret2, v2) ->
     List.length args1 = List.length args2 &&
     List.for_all2 typ_eq args1 args2 &&
-    List.length effs1 = List.length effs2 && 
+    effs1 = effs2 &&
     typ_eq ret1 ret2 &&
     v1 = v2
   | Ptr (Reftype (b1)), Ptr (Reftype (b2)) ->
     (match b1, b2 with
     | Bprim p1, Bprim p2 -> ptype_eq p1 p2
     | Bstruct s1, Bstruct s2 -> s1 = s2
-    | Barray (pt1, _), Barray (pt2, _) -> 
-        ptype_eq pt1 pt2
+    | Barray (pt1, n1), Barray (pt2, n2) ->
+        n1 = n2 && ptype_eq pt1 pt2
     | _ -> false)
   | Stype s1, Stype s2 -> s1 = s2
   | Atype (elem1, n1), Atype (elem2, n2) -> n1 = n2 && typ_eq elem1 elem2
@@ -299,6 +298,10 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
     | [arg] ->
         let arg_ty = infer_expr ee senv env arg in
         begin match arg_ty with
+        | Ptr (Reftype (Bstruct "bpf_sock_create")) ->
+            raise (TypeError "Socket-create context only supports scalar field reads")
+        | Ptr (Reftype (Bstruct "bpf_raw_sys_enter")) ->
+            raise (TypeError "Raw tracepoint context only exposes syscall_id")
         | Ptr (Reftype (btype)) ->
             begin match btype with
             | Bprim pt -> Vtype pt
@@ -317,6 +320,10 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
         let t1 = infer_expr ee senv env arg1 in
         let t2 = infer_expr ee senv env arg2 in
         begin match t1 with
+        | Ptr (Reftype (Bstruct "bpf_sock_create")) ->
+            raise (TypeError "Socket-create context is read-only")
+        | Ptr (Reftype (Bstruct "bpf_raw_sys_enter")) ->
+            raise (TypeError "Raw tracepoint context is read-only")
         | Ptr (Reftype (btype)) ->
             let expected_ty = match btype with
               | Bprim pt -> Vtype pt
@@ -337,6 +344,11 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
     begin match ty1 with
     | Ftype (formals, _eff, ret_type, va) ->
         let n_formals = List.length formals in
+        let n_actuals = List.length arg_tys in
+        if n_actuals < n_formals || (not va && n_actuals <> n_formals) then
+          raise (TypeError (Printf.sprintf
+            "Function application expects %s%d arguments, got %d"
+            (if va then "at least " else "") n_formals n_actuals));
         (*and n_actuals = List.length arg_tys in*)
 
         (* Does the callee name correspond to a known external variadic? *)
@@ -459,15 +471,17 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
   | Fget (e, field_name) ->
       let e_ty = infer_expr ee senv env e in
       begin match e_ty with
+      | Stype "bpf_raw_sys_enter"
+      | Ptr (Reftype (Bstruct "bpf_raw_sys_enter")) when field_name <> "syscall_id" ->
+          raise (TypeError "Raw tracepoint context only exposes syscall_id")
       | Stype struct_name ->
           let field_ty = Senv.find_field struct_name field_name senv in
           field_ty
       | Ptr (Reftype (Bstruct struct_name)) ->
           let field_ty = Senv.find_field struct_name field_name senv in
           field_ty
-      | Ptr (Otype (Reftype (Bstruct struct_name))) ->
-          let field_ty = Senv.find_field struct_name field_name senv in
-          field_ty
+      | Ptr (Otype _) ->
+          raise (TypeError "Field access through an optional pointer requires a some/none match")
       | _ -> raise (TypeError "Fget can only be applied to struct or pointer to struct types")
       end
   | Beepl_ast.Ainit (arr, exprs) ->
@@ -505,6 +519,17 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
   
       if has_pbytes && has_opt then
         raise (TypeError "Match: cannot mix Pbytes with option patterns (Psome/Pnone)");
+      if has_pbytes then begin
+        match patterns with
+        | [Pbytes (_, Stype _, _); Pbytes (_, Bytes, [])] -> ()
+        | _ -> raise (TypeError "Bytes match requires one struct pattern followed by a bytes fallback")
+      end;
+      if has_opt then begin
+        let count pred = List.length (List.filter pred patterns) in
+        if count (function Psome _ -> true | _ -> false) <> 1
+           || count (function Pnone -> true | _ -> false) <> 1 then
+          raise (TypeError "Option match requires exactly one some and one none branch")
+      end;
   
       (* branch inference under the right discipline *)
       let infer_branch pat body =
@@ -533,8 +558,18 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
              | _ -> raise (TypeError "Pbytes requires scrutinee of type bytes"));
             (* (optional) sanity: the schema 't' for 's' should be a struct type *)
             (match t with
-             | Stype _ -> ()
-             | Bytes -> ()
+            | Stype name ->
+                List.iter (fun (_, ty) -> match ty with
+                  | Vtype _ -> ()
+                  | _ -> raise (TypeError "Packet schemas currently require scalar fields; pointers cannot be deserialized"))
+                  (Senv.fields_of name senv);
+                List.iter (fun (field, ty) ->
+                  let expected = Senv.find_field name field senv in
+                  if not (typ_eq expected ty) then
+                    raise (TypeError ("Pbytes field type mismatch: " ^ field))) fields
+             | Bytes ->
+                 if fields <> [] then
+                   raise (TypeError "Bytes fallback cannot bind struct fields")
              | _ -> raise (TypeError "Pbytes schema must be a struct type (Stype ...)"));
             (* extend env with the packet-as-struct name and field bindings *)
             let env1 = Env.add s t env in
@@ -622,10 +657,71 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
   let inferred_type = infer_expr ee senv env_with_args_and_vars body in
   if not (typ_eq inferred_type ret_type) then
     raise (TypeError "Return type mismatch");
+  (match ret_type with
+   | Ptr _ -> raise (TypeError "Functions cannot return pointers to local storage")
+   | _ -> ());
   ()
 
+(* Kernel programs must have an acyclic, statically known call graph. *)
+let check_ebpf_calls prog =
+  let rec calls = function
+    | App (Var name, args) -> name :: List.concat (List.map calls args)
+    | App _ -> raise (TypeError "eBPF does not support indirect function calls")
+    | Prim (_, es) | Sinit (_, _, es) | Ainit (_, es) ->
+        List.concat (List.map calls es)
+    | Let (_, _, a, b) -> calls a @ calls b
+    | If (a, b, c) | For (a, b, _, c) -> calls a @ calls b @ calls c
+    | Fget (e, _) | Esome e -> calls e
+    | Match (e, _, es) -> calls e @ List.concat (List.map calls es)
+    | Var _ | Const _ | Aaccess _ | Enone _ -> []
+  in
+  if List.exists (function EBPFInternal _ -> true | _ -> false) prog then begin
+    let graph = List.filter_map (function
+      | Internal (Tfundecl (name, _, _, _, _, body), _)
+      | EBPFInternal (Tfundecl (name, _, _, _, _, body), _) ->
+          Some (name, calls body)
+      | _ -> None) prog in
+    let rec visit path name =
+      if List.mem name path then
+        raise (TypeError ("Recursive eBPF call cycle involving " ^ name));
+      match List.assoc_opt name graph with
+      | None -> ()
+      | Some children -> List.iter (visit (name :: path)) children
+    in
+    List.iter (fun (name, _) -> visit [] name) graph;
+    let rec uses_tc_helper name =
+      name = "bpf_skb_change_type" ||
+      match List.assoc_opt name graph with
+      | None -> false
+      | Some children -> List.exists uses_tc_helper children
+    in
+    let tc_section = function
+      | None -> false
+      | Some s ->
+          let s = String.trim s in
+          let s = if String.length s >= 8 && String.sub s 0 8 = "#section"
+                  then String.trim (String.sub s 8 (String.length s - 8)) else s in
+          s = "tc" || s = "\"tc\""
+    in
+    List.iter (function
+      | EBPFInternal (Tfundecl (name, _, _, _, _, _), section)
+        when not (tc_section section) && uses_tc_helper name ->
+          raise (TypeError "bpf_skb_change_type currently requires a tc entry point")
+      | _ -> ()) prog
+  end
 
 let infer_program (prog : program) =
+  List.iter (function
+    | StructDecl ("bpf_sock_create", fields, _) ->
+        if fields <> List.map (fun name -> (name, Vtype Tuint32))
+          ["bound_dev_if"; "family"; "type"; "protocol"] then
+          raise (TypeError "Socket-create context layout must be four uint32 fields: bound_dev_if, family, type, protocol")
+    | StructDecl ("bpf_raw_sys_enter", fields, _) ->
+        if fields <> [("reserved_regs", Vtype Tulong); ("syscall_id", Vtype Tlong)] then
+          raise (TypeError "Raw tracepoint context layout must be reserved_regs:ulong, syscall_id:long")
+    | _ -> ()) prog;
+  (try Beepl_maps.prepare prog with Invalid_argument s -> raise (TypeError s));
+  check_ebpf_calls prog;
   let senv = build_senv prog in  
   let ee    = build_efenv () in
   let extern_fun_types = extern_bindings_of_efenv ee in   
@@ -636,6 +732,7 @@ let infer_program (prog : program) =
           Some (name, Ftype (List.map snd args, eff, ret, false))
       | EBPFInternal (Tfundecl (name, ret, eff, args, _, _), _) ->
           Some (name, Ftype (List.map snd args, eff, ret, false))
+      | StructDecl (name, _, sec) when Beepl_maps.is_map_section sec -> Some (name, Beepl_maps.handle_type)
       | StructDecl _ -> None
       | GlobalLet (name, ty, _, _) -> Some (name, ty)
     ) prog
@@ -650,7 +747,11 @@ let infer_program (prog : program) =
       | StructDecl _ -> ()
       | GlobalLet (name, ty, e, l) ->
           let inferred_ty = infer_expr ee senv global_env e in
-          if not (typ_eq inferred_ty ty) then
+          let string_array = match ty, e with
+            | Atype (Vtype Tint8, n), Const (Cstring s) ->
+                n = String.length s + 1
+            | _ -> false in
+          if not (string_array || typ_eq inferred_ty ty) then
             raise (TypeError ("Global let " ^ name ^ " type mismatch"))
         
     ) prog

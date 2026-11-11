@@ -209,7 +209,7 @@ Fixpoint transBeePL_type (t : BeeTypes.type) : Ctypes.type :=
   | Stype s a => (Tstruct s a) 
   | Atype t z a => (Tarray (transBeePL_type t) z a)
   | Ftype ts ef t' v =>
-      let cts := transBeePL_types transBeePL_type ts in 
+      let cts := map Ctypes.typeconv (transBeePL_types transBeePL_type ts) in
       let ct := transBeePL_type t' in 
       (Tfunction cts ct
         {| cc_vararg := if v then Some 1 else None;
@@ -233,7 +233,7 @@ with transBeePL_ptr_type (pt : ptr_type) : Ctypes.type :=
       end
   | Otype t => (transBeePL_ptr_type t)
   | Fptype ts ef t v =>
-      let cts := transBeePL_types transBeePL_type ts in 
+      let cts := map Ctypes.typeconv (transBeePL_types transBeePL_type ts) in
       let ct := transBeePL_type t in 
       (Ctypes.Tpointer
         (Tfunction cts ct 

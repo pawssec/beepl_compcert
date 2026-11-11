@@ -1,0 +1,83 @@
+{
+  "timestamp_utc": "2026-11-11T00:10:13.355734+00:00",
+  "kernel": "7.0.0-42-generic",
+  "programs": [
+    {
+      "program": "socket_accept",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        },
+        {
+          "case": "filter_attached_1",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        },
+        {
+          "case": "filter_attached_2",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        },
+        {
+          "case": "filter_attached_3",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        },
+        {
+          "case": "after_detach_control",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        }
+      ],
+      "object_sha256": "c3201b2e419f17a9455eeae597aa23625ace2327291d85b28eb5caec0b11f247",
+      "source_sha256": "d0985900f4630ed55228e8fd5659377dfee6a9d9453e8bc0ab7151a83cef9174",
+      "compiler_sha256": "225af5135c554423b7bb9350cc9608756461af450c0ffa8be5bef00a0588e8cd"
+    },
+    {
+      "program": "socket_drop",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        },
+        {
+          "case": "filter_attached_1",
+          "delivered": false,
+          "expected_delivery": false,
+          "passed": true
+        },
+        {
+          "case": "filter_attached_2",
+          "delivered": false,
+          "expected_delivery": false,
+          "passed": true
+        },
+        {
+          "case": "filter_attached_3",
+          "delivered": false,
+          "expected_delivery": false,
+          "passed": true
+        },
+        {
+          "case": "after_detach_control",
+          "delivered": true,
+          "expected_delivery": true,
+          "passed": true
+        }
+      ],
+      "object_sha256": "f258d24d306d2a023415788ec460528fc921d2ba2024b3f5cc9796d91b548b96",
+      "source_sha256": "fb07b4ed7640965cfae901d32ffc52cfef92e248c152d656802f4479e4681c5b",
+      "compiler_sha256": "225af5135c554423b7bb9350cc9608756461af450c0ffa8be5bef00a0588e8cd"
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,448 @@
+{
+  "timestamp_utc": "2026-11-11T00:45:10.467294+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "0fe48bfcad3f2fe9667d7279db79716a76c90c57f9f069ff8672a7a6e815cb17",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "raw_syscall_count",
+      "source": "evaluation/examples/raw_syscall_count.bpl",
+      "source_sha256": "2dd8837be1906f49a46c15157b67b7cfa9dca78662d6b3b3e46535b4e9a561d2",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "before": {
+            "2": 0
+          },
+          "after": {
+            "2": 0
+          },
+          "delta": {
+            "2": 0
+          },
+          "expected_delta": {
+            "2": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            },
+            {
+              "number": 102,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "selected_getpid",
+          "before": {
+            "2": 0
+          },
+          "after": {
+            "2": 3
+          },
+          "delta": {
+            "2": 3
+          },
+          "expected_delta": {
+            "2": 3
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 3
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "unselected_getuid",
+          "before": {
+            "2": 3
+          },
+          "after": {
+            "2": 3
+          },
+          "delta": {
+            "2": 0
+          },
+          "expected_delta": {
+            "2": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 102,
+              "count": 4
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "switch_to_getuid",
+          "before": {
+            "2": 3
+          },
+          "after": {
+            "2": 5
+          },
+          "delta": {
+            "2": 2
+          },
+          "expected_delta": {
+            "2": 2
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 102,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "old_target_ignored",
+          "before": {
+            "2": 5
+          },
+          "after": {
+            "2": 5
+          },
+          "delta": {
+            "2": 0
+          },
+          "expected_delta": {
+            "2": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "wrong_pid_ignored",
+          "before": {
+            "2": 5
+          },
+          "after": {
+            "2": 5
+          },
+          "delta": {
+            "2": 0
+          },
+          "expected_delta": {
+            "2": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 102,
+              "count": 3
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "restore_pid",
+          "before": {
+            "2": 5
+          },
+          "after": {
+            "2": 6
+          },
+          "delta": {
+            "2": 1
+          },
+          "expected_delta": {
+            "2": 1
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 102,
+              "count": 1
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "after_detach_control",
+          "before": {
+            "2": 6
+          },
+          "after": {
+            "2": 6
+          },
+          "delta": {
+            "2": 0
+          },
+          "expected_delta": {
+            "2": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            },
+            {
+              "number": 102,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "raw_tracepoint/sys_enter",
+      "object_sha256": "7c1bea56c2d4af3b30f4d92b70a979ffa99f68cf7ae78eef6bdc7dc487ea83d4",
+      "map_metadata": {
+        "type": 6,
+        "key_size": 4,
+        "value_size": 8,
+        "max_entries": 3
+      },
+      "execution_mode": "live_raw_tracepoint"
+    },
+    {
+      "program": "syscall_histogram",
+      "source": "evaluation/applications/syscall_histogram.bpl",
+      "source_sha256": "d61e02c034b936351685b089b0dc563914bd052dafeffde7abcee25dd44f9404",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "before": {
+            "39": 0,
+            "102": 0
+          },
+          "after": {
+            "39": 0,
+            "102": 0
+          },
+          "delta": {
+            "39": 0,
+            "102": 0
+          },
+          "expected_delta": {
+            "39": 0,
+            "102": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            },
+            {
+              "number": 102,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "getpid_bucket",
+          "before": {
+            "39": 0,
+            "102": 0
+          },
+          "after": {
+            "39": 3,
+            "102": 0
+          },
+          "delta": {
+            "39": 3,
+            "102": 0
+          },
+          "expected_delta": {
+            "39": 3,
+            "102": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 3
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "getuid_bucket",
+          "before": {
+            "39": 3,
+            "102": 0
+          },
+          "after": {
+            "39": 3,
+            "102": 4
+          },
+          "delta": {
+            "39": 0,
+            "102": 4
+          },
+          "expected_delta": {
+            "39": 0,
+            "102": 4
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 102,
+              "count": 4
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "mixed_buckets",
+          "before": {
+            "39": 3,
+            "102": 4
+          },
+          "after": {
+            "39": 5,
+            "102": 5
+          },
+          "delta": {
+            "39": 2,
+            "102": 1
+          },
+          "expected_delta": {
+            "39": 2,
+            "102": 1
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            },
+            {
+              "number": 102,
+              "count": 1
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "wrong_pid_ignored",
+          "before": {
+            "39": 5,
+            "102": 5
+          },
+          "after": {
+            "39": 5,
+            "102": 5
+          },
+          "delta": {
+            "39": 0,
+            "102": 0
+          },
+          "expected_delta": {
+            "39": 0,
+            "102": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            },
+            {
+              "number": 102,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "restore_pid",
+          "before": {
+            "39": 5,
+            "102": 5
+          },
+          "after": {
+            "39": 6,
+            "102": 5
+          },
+          "delta": {
+            "39": 1,
+            "102": 0
+          },
+          "expected_delta": {
+            "39": 1,
+            "102": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 1
+            }
+          ],
+          "pid_filter": 133607
+        },
+        {
+          "case": "after_detach_control",
+          "before": {
+            "39": 6,
+            "102": 5
+          },
+          "after": {
+            "39": 6,
+            "102": 5
+          },
+          "delta": {
+            "39": 0,
+            "102": 0
+          },
+          "expected_delta": {
+            "39": 0,
+            "102": 0
+          },
+          "passed": true,
+          "syscalls": [
+            {
+              "number": 39,
+              "count": 2
+            },
+            {
+              "number": 102,
+              "count": 2
+            }
+          ],
+          "pid_filter": 133607
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "raw_tracepoint/sys_enter",
+      "object_sha256": "64148615597291c772c97d372513644313f2ddbbefc6c92d47fbb84f7e346162",
+      "map_metadata": {
+        "type": 6,
+        "key_size": 4,
+        "value_size": 8,
+        "max_entries": 257
+      },
+      "execution_mode": "live_raw_tracepoint"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

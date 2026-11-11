@@ -1,0 +1,332 @@
+{
+  "timestamp_utc": "2026-11-11T00:20:24.175403+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "c8c3a887bb43691f273981758b64b37f6cd3be65aa49dad1566f5ebece20d93a",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "tc_drop",
+      "source": "evaluation/examples/tc_drop.bpl",
+      "source_sha256": "9dc1d8618dd76de06ae99ec8ffb455f259fc5007dd9218f1586afceff1bc979b",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 157
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 59
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "45c22e858553a3f366046b189724f5004d53de81e308aee960c2e66d5a28b96e"
+    },
+    {
+      "program": "tc_host",
+      "source": "evaluation/examples/tc_host.bpl",
+      "source_sha256": "ee4742923916da6390b379fa9edfc32ca33a19ac55d2c23b36149fd93efbb39d",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "unicast",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 804
+        },
+        {
+          "case": "broadcast",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 148
+        },
+        {
+          "case": "multicast",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 49
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "75e9d556d74f38a5901b08ac2f81ec39cacf22bb34667d3ae95ea22a06bbe060"
+    },
+    {
+      "program": "tc_ipv4",
+      "source": "evaluation/examples/tc_ipv4.bpl",
+      "source_sha256": "6a4f8b7edb22a8223ad8d9e3ec1957e583a8c247a3169c48194d2846f694d747",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 566
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 72
+        },
+        {
+          "case": "arp",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 68
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "6bd2231a5c4916636a80db7a06549a2722c5c8ee1ccad1f16422055387f7d773"
+    },
+    {
+      "program": "tc_length",
+      "source": "evaluation/examples/tc_length.bpl",
+      "source_sha256": "01ad289952101474cfe6d5e14aa9e14f999f16160937d70a4973e8d08c924faf",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "frame_34",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 311
+        },
+        {
+          "case": "frame_60",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 30
+        },
+        {
+          "case": "frame_79",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 30
+        },
+        {
+          "case": "frame_80",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 31
+        },
+        {
+          "case": "frame_81",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 65
+        },
+        {
+          "case": "frame_128",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 32
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "9a31fea8790079b98e0167a87c432c2b7e5891287cca320d4abf3763ea0d7940"
+    },
+    {
+      "program": "tc_mark",
+      "source": "evaluation/examples/tc_mark.bpl",
+      "source_sha256": "a60d0edf2469132e4097b0204072a0862d959ec6151f7baecb399da43261db84",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "mark_0",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 165
+        },
+        {
+          "case": "mark_41",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 40
+        },
+        {
+          "case": "mark_42",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 78
+        },
+        {
+          "case": "mark_43",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 79
+        },
+        {
+          "case": "mark_4294967295",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 40
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "8f67bb78c2f2e17b63932b6cb189a54962aa1368c1f18d4a345cf2d7cc56e29f"
+    },
+    {
+      "program": "tc_pass",
+      "source": "evaluation/examples/tc_pass.bpl",
+      "source_sha256": "599dac7014c4a58ef999257a5697e7d35a82e4d74182c637e25bbb7cfffd16d1",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 98
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 26
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "e3bb174831402d16ea59d0647f8593b5c446771cb11661abf01d49a9e6b82e74"
+    },
+    {
+      "program": "tc_type_error",
+      "source": "evaluation/examples/tc_type_error.bpl",
+      "source_sha256": "ff73de9de03440737a6e19a19d4226864d2d3946430329af9242a717bd5c61a1",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "unicast",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 439
+        },
+        {
+          "case": "broadcast",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 84
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "tc",
+      "object_sha256": "1dfecb685a13e29250b5e85700001e4c853fbd0ebfaf9f9ecfba42823df8dc7a"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

@@ -22,12 +22,18 @@ Notation "m [ a ]" := (PTree.get (ident_of_string a) m) (at level 10, left assoc
 Definition  beepl_ef_env : ef_env :=
 ef_empty_map ["bpf_get_prandom_u32" <- (nil, (tint32u, (Io :: nil)))]
              ["bpf_ktime_get_ns" <- (nil, (tlongu, (Io :: nil)))]
+             ["bpf_get_current_pid_tgid" <- (nil, (tlongu, (Io :: nil)))]
+             ["bpf_skb_change_type" <-
+               ((Ptrtype (Reftype (Bstruct (ident_of_string "__sk_buff") noattr) noattr)
+                 :: tint32u :: nil), (tlongs, (Write :: Io :: nil)))]
              ["add" <- ((tint32s :: trint32s :: nil), (tint32s, nil))]
              ["bpf_get_current_uid_gid" <- (nil, (tlongu, (Io :: nil)))]
-             ["bpf_map_lookup_elem" <- ((tostruct (ident_of_string "bpf_map_type_hash") noattr :: tolongu :: nil), 
-                                            (tolongu, (Read :: Io :: nil)))]
-             ["bpf_map_update_elem" <- ((tostruct (ident_of_string "bpf_map_type_hash") noattr :: tolongu :: tolongu :: tlongu :: nil), 
-                                           (tlongu, (Write :: Io :: nil)))]
+             ["bpf_map_lookup_elem" <- ((Atype tint32u 8 noattr :: trint32u :: nil),
+                (tolongu, (Read :: Io :: nil)))]
+             ["bpf_map_update_elem" <- ((Atype tint32u 8 noattr :: trint32u :: trlongu :: tlongu :: nil),
+                (tlongs, (Write :: Io :: nil)))]
+             ["bpf_map_delete_elem" <- ((Atype tint32u 8 noattr :: trint32u :: nil),
+                (tlongs, (Write :: Io :: nil)))]
              ["bpf_printk" <- ((trint8s :: tint32s :: nil), (tint32s, (Io :: nil)))]
              ["bpf_probe_read_kernel" <- ((tolongu :: tint32u :: tolongu :: nil), (tlongu, (Read :: Io :: nil)))]
              ["bpf_get_current_comm" <- ((tolongu :: tint32u :: nil),
@@ -47,13 +53,19 @@ Definition check_type_attr (t : type) (s : string) : bool :=
 let id1 := ident_of_string "xdp" in
 let id2 := ident_of_string "__sk_buff" in 
 let id3 := ident_of_string "pt_regs" in
-match t, s with 
+match t, s with
+| Ptrtype (Otype (Reftype (Bstruct id _) _)), "xdp" =>
+    ident_eq id (ident_of_string "_xdp_md_bee")
 | Ptrtype (Reftype (Bstruct id1 _) _), "xdp" => true 
 | (Stype id1 _), "xdp" => true 
-| Ptrtype (Reftype (Bstruct id2 _) _), "socket" => true 
-| (Stype id2 _), "socket" => true 
-| Ptrtype (Reftype (Bstruct id2 _) _), "tc" => true 
-| (Stype id2 _), "tc" => true 
+| Ptrtype (Reftype (Bstruct id _) _), "socket" => ident_eq id id2
+| (Stype id2 _), "socket" => false
+| Ptrtype (Reftype (Bstruct id _) _), "tc" => ident_eq id id2
+| Ptrtype (Reftype (Bstruct id _) _), "cgroup/sock_create" =>
+    ident_eq id (ident_of_string "bpf_sock_create")
+| Ptrtype (Reftype (Bstruct id _) _), "raw_tracepoint/sys_enter" =>
+    ident_eq id (ident_of_string "bpf_raw_sys_enter")
+| (Stype id2 _), "tc" => false
 | Ptrtype (Reftype (Bstruct id2 _) _), "cls" => true 
 | (Stype id2 _), "cls" => true 
 | Ptrtype (Reftype (Bstruct id2 _) _), "act" => true 

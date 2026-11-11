@@ -1,0 +1,220 @@
+{
+  "timestamp_utc": "2026-11-11T00:21:45.340132+00:00",
+  "kernel": "7.0.0-42-generic",
+  "programs": [
+    {
+      "program": "tc_pass",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.085 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.085/0.085/0.085/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_1",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.070 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.070/0.070/0.070/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_2",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.042 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.042/0.042/0.042/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_3",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.055 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.055/0.055/0.055/0.000 ms\n"
+        },
+        {
+          "case": "after_detach_control",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.058 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.058/0.058/0.058/0.000 ms\n"
+        }
+      ],
+      "source_sha256": "599dac7014c4a58ef999257a5697e7d35a82e4d74182c637e25bbb7cfffd16d1",
+      "object_sha256": "e3bb174831402d16ea59d0647f8593b5c446771cb11661abf01d49a9e6b82e74",
+      "compiler_sha256": "c8c3a887bb43691f273981758b64b37f6cd3be65aa49dad1566f5ebece20d93a",
+      "tc_filter_stats": [
+        {
+          "protocol": "all",
+          "pref": 1,
+          "kind": "bpf",
+          "chain": 0
+        },
+        {
+          "protocol": "all",
+          "pref": 1,
+          "kind": "bpf",
+          "chain": 0,
+          "options": {
+            "handle": "0x1",
+            "bpf_name": "tc_pass.o:[tc]",
+            "direct-action": true,
+            "not_in_hw": true,
+            "prog": {
+              "id": 272,
+              "name": "tc_pass",
+              "tag": "691ef55febf78432",
+              "jited": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "program": "tc_drop",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.052 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.052/0.052/0.052/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_1",
+          "reply_received": false,
+          "expected_reply": false,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 0 received, 100% packet loss, time 0ms\n\n"
+        },
+        {
+          "case": "filter_attached_2",
+          "reply_received": false,
+          "expected_reply": false,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 0 received, 100% packet loss, time 0ms\n\n"
+        },
+        {
+          "case": "filter_attached_3",
+          "reply_received": false,
+          "expected_reply": false,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 0 received, 100% packet loss, time 0ms\n\n"
+        },
+        {
+          "case": "after_detach_control",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.083 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.083/0.083/0.083/0.000 ms\n"
+        }
+      ],
+      "source_sha256": "9dc1d8618dd76de06ae99ec8ffb455f259fc5007dd9218f1586afceff1bc979b",
+      "object_sha256": "45c22e858553a3f366046b189724f5004d53de81e308aee960c2e66d5a28b96e",
+      "compiler_sha256": "c8c3a887bb43691f273981758b64b37f6cd3be65aa49dad1566f5ebece20d93a",
+      "tc_filter_stats": [
+        {
+          "protocol": "all",
+          "pref": 1,
+          "kind": "bpf",
+          "chain": 0
+        },
+        {
+          "protocol": "all",
+          "pref": 1,
+          "kind": "bpf",
+          "chain": 0,
+          "options": {
+            "handle": "0x1",
+            "bpf_name": "tc_drop.o:[tc]",
+            "direct-action": true,
+            "not_in_hw": true,
+            "prog": {
+              "id": 276,
+              "name": "tc_drop",
+              "tag": "d4f8542f2b42fac5",
+              "jited": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "program": "tc_ipv4",
+      "tests": [
+        {
+          "case": "before_attach_control",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.081 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.081/0.081/0.081/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_1",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.062 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.062/0.062/0.062/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_2",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.055 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.055/0.055/0.055/0.000 ms\n"
+        },
+        {
+          "case": "filter_attached_3",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.046 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.046/0.046/0.046/0.000 ms\n"
+        },
+        {
+          "case": "after_detach_control",
+          "reply_received": true,
+          "expected_reply": true,
+          "passed": true,
+          "ping_output": "PING 192.0.2.2 (192.0.2.2) from 192.0.2.1 tx: 56(84) bytes of data.\n64 bytes from 192.0.2.2: icmp_seq=1 ttl=64 time=0.062 ms\n\n--- 192.0.2.2 ping statistics ---\n1 packets transmitted, 1 received, 0% packet loss, time 0ms\nrtt min/avg/max/mdev = 0.062/0.062/0.062/0.000 ms\n"
+        }
+      ],
+      "source_sha256": "6a4f8b7edb22a8223ad8d9e3ec1957e583a8c247a3169c48194d2846f694d747",
+      "object_sha256": "6bd2231a5c4916636a80db7a06549a2722c5c8ee1ccad1f16422055387f7d773",
+      "compiler_sha256": "c8c3a887bb43691f273981758b64b37f6cd3be65aa49dad1566f5ebece20d93a",
+      "tc_filter_stats": [
+        {
+          "protocol": "all",
+          "pref": 1,
+          "kind": "bpf",
+          "chain": 0
+        },
+        {
+          "protocol": "all",
+          "pref": 1,
+          "kind": "bpf",
+          "chain": 0,
+          "options": {
+            "handle": "0x1",
+            "bpf_name": "tc_ipv4.o:[tc]",
+            "direct-action": true,
+            "not_in_hw": true,
+            "prog": {
+              "id": 280,
+              "name": "tc_ipv4",
+              "tag": "f431ac758bc2cfa4",
+              "jited": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "passed": true,
+  "namespaces": [
+    "beepl_tc_s_3b18a0e82a",
+    "beepl_tc_r_3b18a0e82a"
+  ],
+  "cleanup_errors": [],
+  "cleanup_complete": true
+}

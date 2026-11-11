@@ -96,7 +96,7 @@ annotation_list:
 
 effect_list:
   | EMPTYBRACKETS { [] }
-  | separated_nonempty_list(COMMA, effect) { $1 }
+  | separated_nonempty_list(COMMA, beepl_effect) { $1 }
 
 arg:
   | t = typ id = IDENT { (id, t) }
@@ -104,7 +104,7 @@ arg:
 field_decl:
   | id = IDENT COLON t = typ { (id, t) }
 
-effect:
+beepl_effect:
   | DIVERGENCE { Divergence }
   | READ { Read }
   | WRITE { Write }
@@ -168,7 +168,7 @@ typ:
   | STRUCT id = IDENT { Stype id }
   | t = typ LBRACK n = INT32 RBRACK { Atype(t, Int32.to_int n) }
   | FUNTYPE LPAREN args = separated_list(COMMA, typ) RPAREN
-    COLON eff = separated_list(COMMA, effect) COMMA ret = typ COMMA va = vararg_flag { Ftype(args, eff, ret, va) }
+    COLON eff = separated_list(COMMA, beepl_effect) COMMA ret = typ COMMA va = vararg_flag { Ftype(args, eff, ret, va) }
   | BYTES { Bytes }
 
 (* --- END OF typ --- *)
@@ -265,7 +265,7 @@ expr:
     { Prim (Bop Ole, [e1; e2]) } 
   | e1 = expr GE e2 = expr
     { Prim (Bop Oge, [e1; e2]) }
-  | LPAREN t = typ RPAREN e = expr 
+  | LPAREN t = typ RPAREN e = expr %prec UMINUS
     {Prim (Cast t, [e]) }
   | REF e = expr 
     {Prim (Ref, [e])}

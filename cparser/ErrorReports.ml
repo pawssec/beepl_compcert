@@ -16,7 +16,6 @@
 
 open Lexing
 open Pre_parser.MenhirInterpreter
-module S = MenhirLib.General (* Streams *)
 
 (* -------------------------------------------------------------------------- *)
 
@@ -125,12 +124,12 @@ let shorten k text =
 
 (* -------------------------------------------------------------------------- *)
 
-(* [stack checkpoint] extracts the parser's stack out of a checkpoint. *)
+(* [environment checkpoint] extracts the parser environment from a checkpoint. *)
 
-let stack checkpoint =
+let environment checkpoint =
   match checkpoint with
   | HandlingError env ->
-      stack env
+      env
   | _ ->
       assert false (* this cannot happen, I promise *)
 
@@ -140,25 +139,7 @@ let stack checkpoint =
    parser checkpoint. *)
 
 let state checkpoint : int =
-  match Lazy.force (stack checkpoint) with
-  | S.Nil ->
-      (* Hmm... The parser is in its initial state. Its number is
-         usually 0. This is a BIG HACK. TEMPORARY *)
-      0
-  | S.Cons (Element (s, _, _, _), _) ->
-      number s
-
-(* -------------------------------------------------------------------------- *)
-
-(* TEMPORARY move to MenhirLib.General *)
-
-let rec drop n (xs : 'a S.stream) : 'a S.stream =
-  match n, xs with
-  | 0, _
-  | _, lazy (S.Nil) ->
-      xs
-  | _, lazy (S.Cons (_, xs)) ->
-      drop (n - 1) xs
+  current_state_number (environment checkpoint)
 
 (* -------------------------------------------------------------------------- *)
 
@@ -167,13 +148,13 @@ let rec drop n (xs : 'a S.stream) : 'a S.stream =
    if it isn't. *)
 
 let element checkpoint i : element =
-  match Lazy.force (drop i (stack checkpoint)) with
-  | S.Nil ->
+  match get i (environment checkpoint) with
+  | None ->
       (* [i] is out of range. This could happen if the handwritten error
          messages are out of sync with the grammar, or if a mistake was
          made. We fail in a non-fatal way. *)
       raise Not_found
-  | S.Cons (e, _) ->
+  | Some e ->
       e
 
 (* -------------------------------------------------------------------------- *)

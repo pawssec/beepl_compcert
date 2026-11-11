@@ -1,0 +1,705 @@
+{
+  "timestamp_utc": "2026-11-10T23:50:17.078812+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "fc2b4db784174827d7297cacf5792f210bbd03d027b53fc17f0c4c3c1577db11",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "xdp_arithmetic",
+      "source": "evaluation/examples/xdp_arithmetic.bpl",
+      "source_sha256": "45a5f4543e992af67be568d0da05e6400593f9020495093bce312805b44ebf2d",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "zero_divisor_default_queue",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1224
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "259bb36a27edb8816428fdcbf81f4ca242cb06eb67ef92081b5c6acdf714fa93"
+    },
+    {
+      "program": "xdp_array",
+      "source": "evaluation/examples/xdp_array.bpl",
+      "source_sha256": "75c18857cc072f3eb6721b933bc66cfea5f6400faa85c0eb0677a45f194b4a2b",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "array_initialization_and_reads",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1166
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "63fb741ebf0599c7ab27ad4862b143b75606328fb1c1a9df4ef4a5baa1bd5c7e"
+    },
+    {
+      "program": "xdp_boolean",
+      "source": "evaluation/examples/xdp_boolean.bpl",
+      "source_sha256": "682adc321e860641dad8cbbcb4cbe012df1bd2dbe264c352f0acce751598001e",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "boolean_negation",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1514
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "ed8a13a667e7a67cbca1b47ad1ea0faf0f425519739974ed0c5316f27fbff983"
+    },
+    {
+      "program": "xdp_cast",
+      "source": "evaluation/examples/xdp_cast.bpl",
+      "source_sha256": "730d2f3809dced2e2d04a40deda00539322d5537cbfd632f9ec931d9e67d66cf",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "narrowing_cast",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1279
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "6fd048a3860148701179adbb2e91fd4e53b979440c967fc3d017d0601c90fcc6"
+    },
+    {
+      "program": "xdp_clock",
+      "source": "evaluation/examples/xdp_clock.bpl",
+      "source_sha256": "a035e4fcc2c4555879be9b984b31fc593caba21814f508ae0ecdb750fd5e9d94",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "monotonic_time_nonzero",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 482
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "fe20f6dab17c2b8167d2ed4ab1ae37f948a5c6ec59014d43e3263e2434d215f0"
+    },
+    {
+      "program": "xdp_drop",
+      "source": "evaluation/examples/xdp_drop.bpl",
+      "source_sha256": "0cb04304a6cc14dea605205dd01390aa46d60574c21a3c4ae59f85bd4781d4e5",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 707
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 16
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "7bc74beb0f411a786ee1f0cc677d0ad1ba207de6ceea9b2473e409fd42928e2e"
+    },
+    {
+      "program": "xdp_loop",
+      "source": "evaluation/examples/xdp_loop.bpl",
+      "source_sha256": "0531949329329509b1eba9d6450824dbd1f4c1c1e4bc3c839866ad8b3cc44b83",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "four_iterations",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 580
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "043ee123305c5c4d02eb28ecc5a4aa33f508935aadd567fc2ba469677c3941b9"
+    },
+    {
+      "program": "xdp_loop_empty",
+      "source": "evaluation/examples/xdp_loop_empty.bpl",
+      "source_sha256": "8e13ad9f8dc1ccfcc66db9212469e61e65fdb6bc46b706e4fdb8c7b84287a5b7",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "reversed_bounds",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 643
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "dcbf4e00ece37b147aa64104dc52aeee75999be56e3ad23df1fbda3c57440b65"
+    },
+    {
+      "program": "xdp_loop_limits",
+      "source": "evaluation/examples/xdp_loop_limits.bpl",
+      "source_sha256": "b201114b67aa56af7a6a24a70cbf6984930896365855aebec783f33e0c018e0a",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "unsigned_endpoints",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1088
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "34ec5b31d6cc497b7a6089c0c8a390eb67579c9317f2a5b6a7960b8c8c669539"
+    },
+    {
+      "program": "xdp_modulo",
+      "source": "evaluation/examples/xdp_modulo.bpl",
+      "source_sha256": "dccbc8c6eb692ba66173b8f26c7513d95ac9a8bb6c9af4030912d0dc1337db4f",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "zero_modulus",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 751
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "1cbc5e30d4b2ae7e19f50c184e0aa126c39612b7f3684300ed14c8d6749cb212"
+    },
+    {
+      "program": "xdp_option_none",
+      "source": "evaluation/examples/xdp_option_none.bpl",
+      "source_sha256": "453e6d7fbcfda223311fc9096c0706ffd7a8a7b4dbc9e834b49250d3b5744018",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "null_match",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1317
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "8a85cf1e85b4ea9ae9d0035910fa57bf9b28e10eabde4f2310ad7fc1df999f39"
+    },
+    {
+      "program": "xdp_option_some",
+      "source": "evaluation/examples/xdp_option_some.bpl",
+      "source_sha256": "efa6e53fff8913cbb7d3d8a76429d4b9b8ee39a432ae5671c524deacad28f634",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "nonnull_match_and_dereference",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 918
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "2f206131d0fc4006bb0b5c39aff018dc04e4d78df8c148ad8211902fdb929f09"
+    },
+    {
+      "program": "xdp_pass",
+      "source": "evaluation/examples/xdp_pass.bpl",
+      "source_sha256": "0e7ba3687b14a0af98048bceadf32eabe979e83dafc8d0374a5b655a6aafa278",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 616
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 37
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "375f6a88878b64ba7f3f17616a00b753ea659636bb0e23027040ffee2d4e7566"
+    },
+    {
+      "program": "xdp_queue",
+      "source": "evaluation/examples/xdp_queue.bpl",
+      "source_sha256": "a608c9c3cddf827f861695343c0f83c588b7d6d1ada72fd83dc3f80ec567fb45",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "default_queue",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 561
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "2e1fe8ac8f1c2ff583f4ccc96d269380e5c03b949a2c77c3afb4b244220d6e4a"
+    },
+    {
+      "program": "xdp_random",
+      "source": "evaluation/examples/xdp_random.bpl",
+      "source_sha256": "1ede3b85c0a3b4073760ca89067cede1d23ba00418c430eda719c33309399d2a",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "random_0",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 1240
+        },
+        {
+          "case": "random_1",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 32
+        },
+        {
+          "case": "random_2",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 33
+        },
+        {
+          "case": "random_3",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 59
+        },
+        {
+          "case": "random_4",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 32
+        },
+        {
+          "case": "random_5",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 32
+        },
+        {
+          "case": "random_6",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 33
+        },
+        {
+          "case": "random_7",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 32
+        },
+        {
+          "case": "random_8",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 53
+        },
+        {
+          "case": "random_9",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 34
+        },
+        {
+          "case": "random_10",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 55
+        },
+        {
+          "case": "random_11",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 52
+        },
+        {
+          "case": "random_12",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 36
+        },
+        {
+          "case": "random_13",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 55
+        },
+        {
+          "case": "random_14",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 75
+        },
+        {
+          "case": "random_15",
+          "expected": [
+            1,
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 31
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "08cd01a3279c8f1a5e198c8d0aa54759b4d64a32edac3e9a94b620074e9d3e26"
+    },
+    {
+      "program": "xdp_shift",
+      "source": "evaluation/examples/xdp_shift.bpl",
+      "source_sha256": "a3c462712a19a0ca226ff94b0e358ff2e36ac6e02c42270ee04b4f25bc9da184",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "out_of_range_shift",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 944
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "c56b5e773656c4a8b4e72e2c97e6866a078ff0f84666d14c9e334bcecce9217c"
+    },
+    {
+      "program": "xdp_signed_div",
+      "source": "evaluation/examples/xdp_signed_div.bpl",
+      "source_sha256": "c32fab4a15efc7f11c4c52ec1fea6d601433751e220a5bd6ce743c1d229b6c2a",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "signed_division",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 603
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "379cec5f9a3b8124437406e53b665978b705a220afbc95757a41054a604b4277"
+    },
+    {
+      "program": "ipv6_guard",
+      "source": "evaluation/applications/ipv6_guard.bpl",
+      "source_sha256": "516723dfb963a37766065c0bb459722abf112bc1f984ac530762e18089ca17fb",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 638
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 100
+        },
+        {
+          "case": "arp",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 43
+        },
+        {
+          "case": "ethernet_boundary",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 48
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "df95a3348b85087856c395dd797334750ced6b4bc018f89e4f50160f84011e34"
+    },
+    {
+      "program": "udp_port_filter",
+      "source": "evaluation/applications/udp_port_filter.bpl",
+      "source_sha256": "4e59bc8efee8e808a5d7562b79b9b599b9db2ffc8e724630edde510a2ad8a257",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "allowed_udp",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 915
+        },
+        {
+          "case": "blocked_udp",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 83
+        },
+        {
+          "case": "tcp_same_port",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 79
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 74
+        },
+        {
+          "case": "arp",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 65
+        },
+        {
+          "case": "short_ipv4",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 70
+        },
+        {
+          "case": "header_one_byte_short",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 39
+        },
+        {
+          "case": "header_exact",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 86
+        },
+        {
+          "case": "options",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 78
+        },
+        {
+          "case": "fragment_offset",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 89
+        },
+        {
+          "case": "more_fragments",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "duration_ns": 45
+        },
+        {
+          "case": "dont_fragment",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "duration_ns": 68
+        }
+      ],
+      "emulated_tests": [],
+      "object_sha256": "f79eb947726c806a79e1c1f501ddf50e55fab8de55ddc342de61954921dcbd36"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

@@ -1,0 +1,587 @@
+{
+  "timestamp_utc": "2026-11-11T01:00:53.302016+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "a8c7f6f1120bad0bd4f3b7d4b91cfe815dee5bfdf615d7a06b8d7ae61e8d7360",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "xdp_qinq_ipv4",
+      "source": "evaluation/examples/xdp_qinq_ipv4.bpl",
+      "source_sha256": "a8102462b1802b83a3495d588c147fbe1e13710ddaa8cb5b31f9f6c122099251",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "matching_tags",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 604
+        },
+        {
+          "case": "header_exact",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 169
+        },
+        {
+          "case": "untagged",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 60
+        },
+        {
+          "case": "inner_ipv6",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 100
+        },
+        {
+          "case": "inner_arp",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 34
+        },
+        {
+          "case": "extra_tag",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 38
+        },
+        {
+          "case": "tag_0_wrong_tci_0",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 57
+        },
+        {
+          "case": "tag_0_wrong_tci_199",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 57
+        },
+        {
+          "case": "tag_0_wrong_tci_201",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 56
+        },
+        {
+          "case": "tag_0_wrong_tci_4095",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 54
+        },
+        {
+          "case": "tag_0_wrong_tci_25600",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 71
+        },
+        {
+          "case": "tag_0_priority_dei_4096",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 70
+        },
+        {
+          "case": "tag_0_priority_dei_8192",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 91
+        },
+        {
+          "case": "tag_0_priority_dei_57344",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 33
+        },
+        {
+          "case": "tag_0_priority_dei_61440",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 31
+        },
+        {
+          "case": "tag_0_wrong_tpid",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 53
+        },
+        {
+          "case": "tag_1_wrong_tci_0",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 59
+        },
+        {
+          "case": "tag_1_wrong_tci_99",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 33
+        },
+        {
+          "case": "tag_1_wrong_tci_101",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 35
+        },
+        {
+          "case": "tag_1_wrong_tci_4095",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 58
+        },
+        {
+          "case": "tag_1_wrong_tci_25600",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 106
+        },
+        {
+          "case": "tag_1_priority_dei_4096",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 100
+        },
+        {
+          "case": "tag_1_priority_dei_8192",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 35
+        },
+        {
+          "case": "tag_1_priority_dei_57344",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 31
+        },
+        {
+          "case": "tag_1_priority_dei_61440",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 36
+        },
+        {
+          "case": "tag_1_wrong_tpid",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 59
+        },
+        {
+          "case": "single_tag",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 52
+        },
+        {
+          "case": "truncated_14",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 55
+        },
+        {
+          "case": "truncated_15",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 51
+        },
+        {
+          "case": "truncated_16",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 52
+        },
+        {
+          "case": "truncated_17",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 69
+        },
+        {
+          "case": "truncated_18",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 32
+        },
+        {
+          "case": "truncated_19",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 56
+        },
+        {
+          "case": "truncated_20",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 83
+        },
+        {
+          "case": "truncated_21",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 81
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "xdp",
+      "object_sha256": "ce3ed6abb16fcef6168b0c1625ed34d5bf1fa271680263a011ec9f31a2792926"
+    },
+    {
+      "program": "xdp_vlan_ipv4",
+      "source": "evaluation/examples/xdp_vlan_ipv4.bpl",
+      "source_sha256": "59bc8ddeac3311390a24090e2a20d30c2b52ea399ef936d6123cfd66705f5a43",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "matching_tags",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 648
+        },
+        {
+          "case": "header_exact",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 21
+        },
+        {
+          "case": "untagged",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 35
+        },
+        {
+          "case": "inner_ipv6",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 90
+        },
+        {
+          "case": "inner_arp",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 18
+        },
+        {
+          "case": "extra_tag",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 19
+        },
+        {
+          "case": "tag_0_wrong_tci_0",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 36
+        },
+        {
+          "case": "tag_0_wrong_tci_99",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 19
+        },
+        {
+          "case": "tag_0_wrong_tci_101",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 18
+        },
+        {
+          "case": "tag_0_wrong_tci_4095",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 42
+        },
+        {
+          "case": "tag_0_wrong_tci_25600",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 33
+        },
+        {
+          "case": "tag_0_priority_dei_4096",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 37
+        },
+        {
+          "case": "tag_0_priority_dei_8192",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 31
+        },
+        {
+          "case": "tag_0_priority_dei_57344",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 18
+        },
+        {
+          "case": "tag_0_priority_dei_61440",
+          "expected": [
+            2
+          ],
+          "actual": 2,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 19
+        },
+        {
+          "case": "tag_0_wrong_tpid",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 30
+        },
+        {
+          "case": "truncated_14",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 39
+        },
+        {
+          "case": "truncated_15",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 18
+        },
+        {
+          "case": "truncated_16",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 17
+        },
+        {
+          "case": "truncated_17",
+          "expected": [
+            1
+          ],
+          "actual": 1,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 17
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "xdp",
+      "object_sha256": "b1866ddaf4802c8e10abda57b553ca70af469d1ea3074b330da314b387fe2067"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

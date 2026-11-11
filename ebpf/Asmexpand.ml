@@ -69,10 +69,28 @@ let preg_to_dwarf = function
    | IR r -> int_reg_to_dwarf r
    | _ -> assert false
 
+(* The kernel supplies only R1 and R10 at entry. CompCert's ordinary calling
+   convention spills incoming callee-saved registers when a helper call keeps
+   values live. Give those otherwise undefined entry values a concrete value
+   before their spill. Ordinary subprograms must preserve their caller's values. *)
+let initialize_entry_registers id code =
+  let entry = List.exists (function
+    | Sections.Section_user (name, _, _) ->
+        List.mem name ["xdp"; "socket"; "tc"; "cgroup/sock_create"; "raw_tracepoint/sys_enter"]
+    | _ -> false) (C2C.atom_sections id) in
+  if not entry then code else
+  let spilled r = List.exists (function
+    | Pstore (_, R10, Datatypes.Coq_inl src, _) -> src = r
+    | _ -> false) code in
+  let regs = List.filter spilled [R6; R7; R8; R9] in
+  List.map (fun r -> Palu (MOV, W64, r, Datatypes.Coq_inr Integers.Int.zero)) regs
+  @ code
+
 let expand_function id fn =
   try
     set_current_function fn;
-    expand id (int_reg_to_dwarf R10) preg_to_dwarf expand_instruction fn.fn_code;
+    expand id (int_reg_to_dwarf R10) preg_to_dwarf expand_instruction
+      (initialize_entry_registers id fn.fn_code);
     Errors.OK (get_current_function ())
   with Error s ->
     Errors.Error (Errors.msg (coqstring_of_camlstring s))

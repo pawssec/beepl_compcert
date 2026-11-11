@@ -270,6 +270,12 @@ endif
 FILES=$(VLIB) $(BEEPL) $(COMMON) $(BACKEND) $(CFRONTEND) $(DRIVER) $(FLOCQ) \
   $(MENHIRLIB) $(PARSER) $(EXPORTLIB)
 
+# Include eBPF-specific dependencies in coqdep's input, so a clean parallel
+# build schedules them after the libraries they import.
+ifeq ($(ARCH),ebpf)
+FILES += Size.v Mulh.v
+endif
+
 # Generated source files
 
 GENERATED=\

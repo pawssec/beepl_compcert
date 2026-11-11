@@ -1,0 +1,183 @@
+{
+  "timestamp_utc": "2026-11-11T00:10:13.230427+00:00",
+  "kernel": "7.0.0-42-generic",
+  "compiler": "/home/auser/research/beepl_compcert/evaluation/.build/compiler/ccomp",
+  "compiler_sha256": "225af5135c554423b7bb9350cc9608756461af450c0ffa8be5bef00a0588e8cd",
+  "kernel_requested": true,
+  "programs": [
+    {
+      "program": "socket_accept",
+      "source": "evaluation/examples/socket_accept.bpl",
+      "source_sha256": "d0985900f4630ed55228e8fd5659377dfee6a9d9453e8bc0ab7151a83cef9174",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            4294967295
+          ],
+          "actual": 4294967295,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 247
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            4294967295
+          ],
+          "actual": 4294967295,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 60
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "socket",
+      "object_sha256": "c3201b2e419f17a9455eeae597aa23625ace2327291d85b28eb5caec0b11f247"
+    },
+    {
+      "program": "socket_drop",
+      "source": "evaluation/examples/socket_drop.bpl",
+      "source_sha256": "fb07b4ed7640965cfae901d32ffc52cfef92e248c152d656802f4479e4681c5b",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 551
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 48
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "socket",
+      "object_sha256": "f258d24d306d2a023415788ec460528fc921d2ba2024b3f5cc9796d91b548b96"
+    },
+    {
+      "program": "socket_ipv4",
+      "source": "evaluation/examples/socket_ipv4.bpl",
+      "source_sha256": "0563ec9190f608f9c6ddacf370b052e2034c63be00e05c50abeb26b825127616",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "ipv4",
+          "expected": [
+            4294967295
+          ],
+          "actual": 4294967295,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 258
+        },
+        {
+          "case": "ipv6",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 120
+        },
+        {
+          "case": "arp",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 60
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "socket",
+      "object_sha256": "336b5dd758cbcc875e10c799aed5f3a1989f83ebd26ae93232e0df3d324f9d3c"
+    },
+    {
+      "program": "socket_length",
+      "source": "evaluation/examples/socket_length.bpl",
+      "source_sha256": "f915446c41caabe39501bf25749051bb1e3ede6cc7ae75956af5f8ff526c7bea",
+      "compile": "passed",
+      "kernel": "passed",
+      "emulation": "not_requested",
+      "tests": [
+        {
+          "case": "frame_34",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 423
+        },
+        {
+          "case": "frame_45",
+          "expected": [
+            0
+          ],
+          "actual": 0,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 163
+        },
+        {
+          "case": "frame_46",
+          "expected": [
+            4294967295
+          ],
+          "actual": 4294967295,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 83
+        },
+        {
+          "case": "frame_60",
+          "expected": [
+            4294967295
+          ],
+          "actual": 4294967295,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 48
+        },
+        {
+          "case": "frame_128",
+          "expected": [
+            4294967295
+          ],
+          "actual": 4294967295,
+          "passed": true,
+          "packet_preserved": true,
+          "duration_ns": 46
+        }
+      ],
+      "emulated_tests": [],
+      "program_type": "socket",
+      "object_sha256": "1c431d5c2e0e576a0c95c79446870dbc54279714cdbc1e7ec774268a6c7363a6"
+    }
+  ],
+  "rejections": [],
+  "prebuilt": true
+}

@@ -46,6 +46,17 @@ match es with
 end.
 
 End Type_check_exprs. 
+
+(* Look up the source field type directly. A round trip through C types loses
+   BeePL's bytes and optional-pointer types. *)
+Fixpoint type_of_bfield (x : ident) (ms : list bmember) : res type :=
+match ms with
+| nil => Error (msg "TYPE ERROR: Unknown struct field")
+| Member_plain y t :: rest =>
+    if ident_eq x y then OK t else type_of_bfield x rest
+| Member_bitfield y sz s a n padding :: rest =>
+    if ident_eq x y then OK (Vtype (Tint sz s a)) else type_of_bfield x rest
+end.
                                                                                                       
 Fixpoint type_check_expr (cenv : bcomposite_env) (Gamma : ty_context) (Sigma : store_context) (e : expr) {struct e} : res (type * effect) :=
 match e with 
@@ -214,7 +225,7 @@ match e with
                             | Cop.Oeq => match es with 
                                           | e1 :: e2 :: nil => do (te1, ef1) <- type_check_expr cenv Gamma Sigma e1;
                                                                do (te2, ef2) <- type_check_expr cenv Gamma Sigma e2;
-                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1 || is_primbool te2) && eq_type te1 t) 
+                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1 || is_primbool te2) && eq_type (Vtype Tbool) t)
                                                                then OK(Vtype Tbool, ef1 ++ ef2)
                                                                else Error (msg "TYPE ERROR: Wrong argument types to eq operator, it expects int or long as argument")
                                           | _ =>  Error (msg "TYPE ERROR: Wrong number of arguments to Binary operators") 
@@ -222,7 +233,7 @@ match e with
                             | Cop.One => match es with 
                                           | e1 :: e2 :: nil => do (te1, ef1) <- type_check_expr cenv Gamma Sigma e1;
                                                                do (te2, ef2) <- type_check_expr cenv Gamma Sigma e2;
-                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1 || is_primbool te2) && eq_type te1 t) 
+                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1 || is_primbool te2) && eq_type (Vtype Tbool) t)
                                                                then OK(Vtype Tbool, ef1 ++ ef2)
                                                                else Error (msg "TYPE ERROR: Wrong argument types to ne operator, it expects int or long as argument")
                                           | _ =>  Error (msg "TYPE ERROR: Wrong number of arguments to Binary operators") 
@@ -230,7 +241,7 @@ match e with
                             | Cop.Olt => match es with 
                                           | e1 :: e2 :: nil => do (te1, ef1) <- type_check_expr cenv Gamma Sigma e1;
                                                                do (te2, ef2) <- type_check_expr cenv Gamma Sigma e2;
-                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type (Vtype Tbool) t) 
+                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type (Vtype Tbool) t)
                                                                then OK(Vtype Tbool, ef1 ++ ef2)
                                                                else Error (msg "TYPE ERROR: Wrong argument types to lt operator, it expects int or long as argument")
                                           | _ =>  Error (msg "TYPE ERROR: Wrong number of arguments to Binary operators") 
@@ -238,7 +249,7 @@ match e with
                             | Cop.Ogt => match es with 
                                           | e1 :: e2 :: nil => do (te1, ef1) <- type_check_expr cenv Gamma Sigma e1;
                                                                do (te2, ef2) <- type_check_expr cenv Gamma Sigma e2;
-                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type te1 t) 
+                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type (Vtype Tbool) t)
                                                                then OK(Vtype Tbool, ef1 ++ ef2)
                                                                else Error (msg "TYPE ERROR: Wrong argument types to gt operator, it expects int or long as argument")
                                           | _ =>  Error (msg "TYPE ERROR: Wrong number of arguments to Binary operators") 
@@ -246,7 +257,7 @@ match e with
                             | Cop.Ole => match es with 
                                           | e1 :: e2 :: nil => do (te1, ef1) <- type_check_expr cenv Gamma Sigma e1;
                                                                do (te2, ef2) <- type_check_expr cenv Gamma Sigma e2;
-                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type te1 t) 
+                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type (Vtype Tbool) t)
                                                                then OK(Vtype Tbool, ef1 ++ ef2)
                                                                else Error (msg "TYPE ERROR: Wrong argument types to le operator, it expects int or long as argument")
                                           | _ =>  Error (msg "TYPE ERROR: Wrong number of arguments to Binary operators") 
@@ -254,7 +265,7 @@ match e with
                             | Cop.Oge => match es with 
                                           | e1 :: e2 :: nil => do (te1, ef1) <- type_check_expr cenv Gamma Sigma e1;
                                                                do (te2, ef2) <- type_check_expr cenv Gamma Sigma e2;
-                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type te1 t) 
+                                                               if (eq_type te1 te2 && (is_primint te1 || is_primlong te1) && eq_type (Vtype Tbool) t)
                                                                then OK(Vtype Tbool, ef1 ++ ef2)
                                                                else Error (msg "TYPE ERROR: Wrong argument types to ge operator, it expects int or long as argument")
                                           | _ =>  Error (msg "TYPE ERROR: Wrong number of arguments to Binary operators") 
@@ -310,16 +321,14 @@ match e with
 | Sfield e x t => do (te, ef) <- type_check_expr cenv Gamma Sigma e;
                   match te with 
                   | Stype id a => match cenv!id with 
-                                  | Some co => do ct <- type_of_member a x (bmembers_cmembers co.(co_members));
-                                               do bt <- trans_ctype_btype ct;
+                                  | Some co => do bt <- type_of_bfield x co.(co_members);
                                                if eq_type t bt 
                                                then OK (bt, ef)
                                                else Error (msg "TYPE ERROR: Wrong type inferred for the struct field")
                                   | None => Error (msg "TYPE ERROR: The field accessed from the struct is not found in composite env")
                                   end
                   | Ptrtype (Reftype (Bstruct id a) _) => match cenv!id with 
-                                             | Some co => do ct <- type_of_member a x (bmembers_cmembers co.(co_members));
-                                               do bt <- trans_ctype_btype ct;
+                                             | Some co => do bt <- type_of_bfield x co.(co_members);
                                                if eq_type t bt 
                                                then OK (bt, ef)
                                                else Error (msg "TYPE ERROR: Wrong type inferred for the struct field")
@@ -349,7 +358,7 @@ match e with
              end
 | Esome e t => do (te, ef) <- type_check_expr cenv Gamma Sigma e;
                match t with 
-               | Ptrtype (Otype t') => if is_option_ptr_type t' && eq_type te (Ptrtype t') 
+               | Ptrtype (Otype t') => if negb (is_option_ptr_type t') && eq_type te (Ptrtype t')
                                then OK(t, ef)
                                else Error (msg "TYPE ERROR: Type of Esome should be an option to ref type")
                | _ => Error (msg "TYPE ERROR: Type of Esome should be an option type")

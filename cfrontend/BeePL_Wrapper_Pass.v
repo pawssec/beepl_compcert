@@ -119,15 +119,17 @@ Fixpoint wrapper_beepl_struct_ebpf_struct
 Definition transform_ctx_ebpf_ctx
            (args : list (ident * type))
   : res (list (ident * Ctypes.type)) :=
-  (* For eBPF functions, we force the C signature to be:
-       int foo(struct xdp_md *ctx);
-     regardless of the BeePL type we saw. *)
+  (* Only the BeePL bytes wrapper needs conversion to the native XDP ABI.
+     Ordinary context pointers retain their declared struct and field offsets. *)
   match args with
-  | (arg_id, _t) :: nil =>
-      (* Ignore BeePL's type, standardize on xdp_md *ctx *)
-      OK (( arg_id
-          , Tpointer (Tstruct _xdp_md noattr) noattr
-          ) :: nil)
+  | (arg_id, Ptrtype (Otype (Reftype (Bstruct id _) _))) :: nil =>
+      if ident_eq id _xdp_md_bee then
+        OK ((arg_id, Tpointer (Tstruct _xdp_md noattr) noattr) :: nil)
+      else Error (msg "COMPILER ERROR: Unsupported optional eBPF context")
+  | (arg_id, Ptrtype (Reftype (Bstruct id a) pa)) :: nil =>
+      OK ((arg_id, Tpointer (Tstruct id a) pa) :: nil)
+  | _ :: nil =>
+      Error (msg "COMPILER ERROR: eBPF context must be a struct pointer")
   | nil =>
       Error (msg "COMPILER ERROR: eBPF program must take exactly one argument (context)")
   | _ :: _ :: _ =>
