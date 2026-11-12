@@ -110,6 +110,373 @@ unfinished separate work and must migrate to the new state invariant. The
 sections below record the development history and include limitations that
 later milestones have repaired.
 
+## Compiler correctness: checked foundations and remaining work
+
+Source soundness above is complete for its stated formal core; the
+BeePL-to-Csyntax semantic simulation is **not complete**. The checked compiler
+modules below do not import the legacy admitted compiler development.
+
+`BeePL_compiler_source_semantics_audit.v` also demonstrates why the old
+`bsem_expr` simulation target must be replaced: after a real allocation and
+initialization, its reference rule can report any block, including a proved
+invalid block. The current source safety theorem uses `ssem_expr` and its
+closures. The new full compiler simulation must use those actual small-step
+configurations; filling the old big-step admissions would not establish it.
+
+
+**Reference lifetime boundary:** source allocation remains live after return,
+but C lowering uses automatic locals. A callee that writes a local reference
+into a caller-owned structure therefore leaves a dangling C pointer. The
+historically accepted witness and native harness are retained in
+`evaluation/tests/known-failures/`.
+`BeePL_compiler_lifetime_audit.v` proves that a source-readable cell cannot
+remain injected into a freed target slot, with an actual allocation/free witness.
+The native result is undefined and must not be treated as a stable expected
+failure code. The chosen interim policy is conservative rejection, enforced by
+`check_reference_escapes` inside `BeePL_compcert`, before code generation.
+
+- `BeePL_escape_types.v` recursively checks structures and arrays for reference
+  storage. Pointers (including nested options), Bytes and function values fail
+  this check; missing or cyclic structure metadata also fails closed.
+- `BeePL_escape_check.v` rejects reference-bearing internal results and memory
+  stores, including aggregate copies. Local immutable reference-bearing values
+  remain allowed. Array initialization must name a declared local array, not a
+  parameter, global or shadowed variable. Calls must resolve directly to a
+  checked internal function or an explicitly supported external helper.
+  Duplicate global identifiers, indirect calls and reference casts are rejected.
+- `BeePL_escape_helpers.v` checks actual external declarations, embedded
+  signatures and permitted argument shapes against explicit synchronous helper
+  contracts. Unknown externals, including unrestricted libc variadic I/O, are
+  rejected. Helper implementation behavior is a trusted ABI boundary; the
+  Boolean check does not prove that behavior or buffer bounds.
+- `BeePL_compiler_escape.v` connects successful compilation to the gate and
+  its internal-function result/body requirements. These are syntactic policy
+  theorems. They do **not** establish semantic lifetime safety or complete the
+  compiler simulation. Their safety interpretation still needs source typing,
+  the helper contracts, and the remaining memory/call simulation proofs.
+- `BeePL_escape_policy.v` proves that the store and direct-call requirements
+  hold throughout each checked body, including nested branches, loops and
+  binding scopes. Every store payload is reference-free; every call has an
+  accepted contract under its checked scope.
+- `BeePL_escape_resolution.v` proves that the gate's direct function lookup
+  agrees with the source global environment, using the enforced uniqueness of
+  global identifiers.
+
+The semantic lifetime development now has separate source and target memories:
+
+- `BeePL_compiler_frame_release.v` proves injection restriction and target
+  `free_list` preservation when retained source memory contains no pointers
+  into retired target blocks. A concrete two-block witness retains a caller
+  mapping while retiring a still-live source allocation's target mapping.
+  Fresh private source allocation and private-slot initialization preserve this
+  closure property. The closure premise is not yet established for complete
+  checked calls.
+- `BeePL_escape_store.v` proves actual typed primitive assignments cannot
+  introduce pointer fragments. `BeePL_compiler_frame_confinement.v` uses this
+  fact and permission preservation to establish closure after typed scalar
+  assignments and their finite sequences. Aggregate padding needs additional
+  reasoning: typed reference-free fields do not constrain arbitrary padding
+  bytes, so these results do not claim whole-aggregate confinement.
+- `BeePL_compiler_reference_evaluation.v` connects actual evaluated scalar
+  `Ref` lowering to Cstrategy execution, allocating the source block into an
+  unused preallocated target slot and establishing the resulting injection.
+  It requires scalar cast stability and target slot/permission facts; it is
+  not yet a complete expression-induction theorem.
+- `BeePL_compiler_binary_translation.v` proves evaluation of actual guarded
+  32/64-bit shift, division and modulo helpers for both signedness choices and
+  all operand values, including agreement with source unsafe-operation
+  detection. These lemmas start with evaluated operands; they do not assume
+  branch evaluation or a successful arithmetic result. Guarded arithmetic now
+  captures each operand once, in source
+  order. Negative counts return zero; modulo statement lowering uses modulo;
+  guard comparisons use C's int type even for long operands. The simulation of
+  effectful operand capture is checked below under explicit child/frame
+  premises; deriving them for arbitrary child executions remains open. Its native
+  regressions are `binary_guard_once.bpl` and `binary_guard_edges.bpl`, run with
+  `make -C evaluation/tests binary-guards-native`.
+- `BeePL_compiler_reference_step.v` connects an actual `ssem_expr` primitive
+  reference-allocation step to execution of the generated C expression and an
+  extended memory injection. It also handles source `Mbool` versus target
+  unsigned-byte stores by proving equality of stored bytes. The preallocated,
+  unused target slot and nonvolatile/typed scalar premises remain explicit;
+  target execution and the final memory injection are derived.
+  `BeePL_compiler_reference_child.v` extends this to arbitrary translated child
+  expressions, using the child simulation and preserving its trace; it does
+  not assume the enclosing target reference evaluation.
+- `translated_typed_scalar_reference_allocation` additionally handles narrow
+  integer cast normalization: it derives equal stored bytes and a memory
+  extension rather than assuming the cast leaves the value unchanged. The
+  original stable-cast theorem remains available as a compatibility API.
+- `BeePL_compiler_cast_evaluation.v` connects successful evaluated-operand
+  primitive cast lowering to target execution and source decoding, reusing
+  the existing generated-cast evaluation proof, including Bool normalization.
+- `BeePL_compiler_dereference_evaluation.v` and `BeePL_compiler_bool_read.v`
+  transport actual surface primitive reads through a memory injection, including
+  Bool. A successful source `Mbool` read already guarantees a canonical byte
+  (`0` or `1`), so the existing unsigned-byte target read agrees. The earlier
+  claim that source `Mbool` normalizes any nonzero byte was incorrect: raw byte
+  `2` gives `Vundef` and source decoding fails. Checked lemmas demonstrate this
+  boundary; the misleading native counterexample fixtures have been removed.
+  Raw Coq `Tint IBool` is distinct from surface `Tbool` and is excluded from this
+  theorem: its source and target access modes differ. These read lemmas concern
+  explicit target `Evalof` expressions. `BeePL_compiler_variable_read.v`
+  connects local and global primitive variables to actual generated evaluation
+  using source reads and memory injection, without assuming a target read.
+  `BeePL_compiler_dereference_translation.v` derives evaluation of the actual
+  enclosing dereference from the child simulation, preserving its trace.
+
+- `BeePL_compiler_rvalue_audit.v` checks that bare Csyntax variables and
+  dereferences cannot evaluate as rvalues, and proves evaluation of the corrected
+  actual variable lowering. The compiler now emits explicit `Evalof` for reads,
+  including struct results and affected packet-field operands; assignment and
+  address operands retain their location forms. Unit variables emit their value
+  directly because there is no readable void cell. The legacy simulation's
+  conversion wrapper no longer changes emitted code. Array initializers now
+  consume translated RHS values directly rather than adding a second `Evalof`;
+  `BeePL_compiler_array_rhs.v` checks the exact generated shapes and the reason
+  the old literal-read form could not execute.
+- `BeePL_representation_check.v` rejects raw `Tint IBool` recursively in program
+  types, annotations, signatures and composites. This internal Coq constructor
+  is distinct from surface `Tbool`. `BeePL_raw_ibool_audit.v` demonstrates why
+  typing and escape checks alone do not exclude it. The compiler invokes the
+  representation check separately, and `BeePL_compiler_representation.v`
+  derives its guarantees from successful compilation. Ordinary Bool and nested
+  options remain permitted.
+- `BeePL_binary_capture_evaluation.v` connects successful `guarded_binop`
+  lowering to execution of both real temporary stores and the arithmetic guard,
+  for both integer widths. The proof preserves left-to-right traces and derives
+  the final guard result. Child evaluation, allocated distinct slots, casts and
+  protection of the left slot during the right evaluation remain explicit
+  induction/invariant obligations.
+
+- `BeePL_compiler_temporary_frame.v` constructs matching target stores and
+  proves that mapped scalar writes cannot overwrite an unused capture slot.
+  Finite write sequences and allocation into another local preserve the slot
+  and its captured value. Arbitrary calls still require their own frame proof.
+- `BeePL_compiler_aggregate_confinement.v` extends caller-memory closure to
+  actual aggregate assignments. Retained source mappings provide closure for
+  copied bytes, including padding; private aggregates can supply explicit
+  scalar-byte/padding provenance. Deriving that provenance across whole checked
+  calls remains open.
+- `BeePL_compiler_tail_calls.v` connects actual statement-call lowering to its
+  return behavior. A non-unit tail call now emits `Sreturn`, correcting a native
+  regression where a wrapper discarded the callee's result. Unit calls keep
+  `Sdo`. `tail_call_result.bpl` is included in `native-check`; the local execution
+  theorem composes with a target call evaluation and does not assume source
+  callee simulation has already been proved.
+
+**Validated scoped-binding repair:** the accepted witness
+`evaluation/tests/accept/option_match_shadow.bpl` shadows an outer
+reference in a Some pattern. Source scope preserves the outer binding, but
+the previous lowering reused its target slot (observed native exit 7, expected
+0). The revised lowering uses fresh lexical slots, restores the incoming scope
+after each binding, and treats `fn_vars` as a name catalogue rather than
+predeclared locals. This also avoids a later pattern binder shadowing a global
+throughout a whole C function. The `_` spelling is an ordinary source identifier;
+nonunit `_` bindings now receive storage too. Unit bindings need no storage.
+The binding helpers, exact translation decompositions, annotation preservation,
+and primitive variable-read bridges have been checked against this translation.
+The read bridge resolves source identifiers through the compiler binding map
+and derives target reads from source reads and memory injection. The rebuilt
+native compiler passes the shadowing, nested-scope, global-name and referenced
+underscore regressions in `evaluation/tests/accept`. Whole-program scope
+simulation remains open; these native results do not establish Linux kernel
+acceptance.
+
+`BeePL_compiler_binding_evaluation.v` composes actual child translations and
+evaluations into the generated binding assignment/comma execution, preserving
+their traces. Its source-head lemma uses the real `ssem_bind2` substitution
+step, with a target-only private local store and a nonidentity value injection.
+`BeePL_compiler_scoped_values.v` relates source substituted values to lexical
+target slots and derives actual compiled variable reads. This relation currently
+covers unit and values stored in scalar/pointer slots. Slot separation,
+nonvolatile access, and canonical load results are explicit premises; the
+whole-program invariant must establish them.
+
+`BeePL_compiler_loop_rvalue_audit.v` checks the actual generated loop guards
+for both directions and for int32 and signed-long bounds. The compiler now
+emits explicit rvalue reads for its captured bounds and gives comparisons their
+correct C `int` result type. Previously the guards used bare lvalues, which
+cannot evaluate as Csyntax rvalues; long comparison results also had an
+incompatible Boolean-test annotation. These are guard execution proofs, not a
+complete simulation of loop bodies or divergence.
+
+**Resume point after the requested pause:** complete the relation between a
+source body after value substitution and the original body compiled under its
+lexical scope. Aggregate bindings additionally require copied-value views:
+source substitution retains an aggregate location, whereas C can copy its
+contents into another local block. Do not assume these duplicate aggregate
+addresses have the same memory-injection mapping. The existing
+`BeePL_copy_bytes.copied_bytes_scalar_load` lemma is a starting point for
+relating fields of copied aggregates. Whole-call entry/exit, lifetime and
+helper-contract composition, and whole-program small-step simulation remain
+open. The 18 legacy `Admitted` theorem boundaries are not part of the checked
+compiler foundation audit and have not been claimed as completed proofs.
+
+The policy deliberately rejects some safe borrowed-reference returns/stores.
+Supporting those precisely is deferred to a future lifetime analysis. Source
+soundness is unchanged: the compiler now accepts a narrower source subset.
+Run the targeted negative tests with `make -C evaluation/tests escape-rejections`
+and the local-use positives with `make -C evaluation/tests native-check`.
+
+- `BeePL_compiler_expression_types.v` proves result-type annotation preservation
+  for every successful expression translation. The structure initializer now
+  retains its declared structure and pointer attributes. This is annotation
+  preservation, not a theorem that every generated C expression is well typed.
+- `BeePL_compiler_decomposition.v` checks the executable translation inversion
+  facts used by the old proof. Its explicitly enumerated cases expose actual
+  operand translations and generated syntax; cases mapped to `True` make no
+  decomposition claim. The legacy decomposition and type-preservation admissions
+  have been replaced by wrappers around these checked results.
+- `BeePL_compiler_statement_decomposition.v` checks the selected statement
+  inversion cases formerly admitted as `trans_expr_st_ind`. Guarded operators
+  expose their intermediate operand context and actual capture-helper run;
+  the legacy lemma now wraps this checked result. Its existing default `True`
+  branch makes no inversion claim for unlisted syntax constructors.
+- `BeePL_compiler_structure.v` derives actual leaf shapes, function signatures,
+  external argument conversions, final generated local declarations, and the
+  particular body-translation run. Generated locals are not equated to source
+  declarations.
+- `BeePL_compiler_globals.v` derives matching global-definition lists from
+  successful `BeePL_compcert` execution and proves symbol/function lookup
+  correspondence. `BeePL_compiler_initial_memory.v` proves that both actual
+  loaders produce identical initial global memory, including symbol-based
+  initializers. This does not equate memories during local allocation.
+- `BeePL_compiler_composites.v` proves preservation of each source composite's
+  layout through actual successful compilation, including the Bytes seed,
+  optional XDP metadata and other generated composites. Complete C
+  representation types retain their size/alignment. Source `sizeof_type` is
+  a separate relation and is not silently identified with C representation size.
+- `BeePL_compiler_operator_translation.v` closes the existing unary-operation
+  and cast correspondence lemmas using actual translation and successful value
+  decoding. These are operation lemmas, not full expression simulation.
+- `BeePL_compiler_local_allocation.v` constructively allocates one run's final
+  target context, proves typed lookup, block validity and permissions, and
+  frames existing memory. `BeePL_compiler_context_growth.v` and
+  `BeePL_compiler_statement_growth.v` cover all successful expression/list/
+  statement translations. `BeePL_compiler_reserved_names.v` proves that no
+  reserved names are introduced, compiler metadata is preserved, and distinct
+  source parameters/locals imply distinct target parameters/locals. Its
+  allocation corollary constructs all target function-entry storage.
+- `BeePL_compiler_memory_injection.v` maps a later source allocation into an
+  unused preallocated target local, preserving previous mappings and simulating
+  scalar initialization. A concrete int32 allocation/store/read witness is
+  included. Slot separation remains a real hypothesis: this does not resolve
+  escaped or repeatedly reused live references.
+- `BeePL_option_capture_evaluation.v` proves actual target expression and
+  statement evaluation of a once-only scrutinee capture, with its original
+  trace. It constructs the store from writable-slot evidence and proves reload.
+  Full integration still needs freshness, allocation and memory-framing facts.
+
+The old `fctx_fresh_in_ff` quantified over *every* input context and required all
+outputs to fit in one finite context. `BeePL_compiler_context_audit.v` proves
+this premise impossible without importing any legacy admission. Consequently,
+the old main simulation statement cannot establish useful compiler correctness
+by filling its proof: its invariant must be replaced. The legacy file also
+contains checked counterexamples to its incomplete expression/statement
+specification relations. Remaining legacy admissions are not certified by the
+new audit.
+
+The ordinary option Match compiler evaluated an effectful scrutinee twice in
+both expression and statement positions. `option_match_once.bpl` reproduced
+this with counters returning two instead of one. Lowering now stores the
+scrutinee once in a fresh typed local and reuses that local, preserving all
+scrutinee-generated declarations. Further freshness proofs exposed and repaired
+three statement-context bugs: a pointer structure initializer lost its generated
+slot, loop indices could collide with body temporaries, and Bytes matching lost
+branch temporaries. Generated names now also reserve actual parameters and
+program identifiers, fixing a user parameter named `__fresh__1000` being
+clobbered by reference storage. None of these fixes implements lifetime checks.
+Seven legacy compiler admissions have been replaced with checked proofs. The
+proof-only rvalue conversion was separately retired: its compatibility wrapper
+is now the identity, so its evaluation lemma is trivial and is not counted as
+new compiler correctness evidence. Eighteen legacy admissions remain, including
+the unusable old simulation target.
+Run the native regressions with:
+
+```sh
+make -C evaluation/tests option-match-native
+make -C evaluation/tests loop-temporaries-native
+make -C evaluation/tests parameter-temporaries-native
+make -C evaluation/tests native-check
+```
+
+The compiler audit and Coq kernel checks are:
+
+```sh
+make -j4 compiler-check
+make -j4 compiler-kernel-check
+```
+
+These audit the listed checked foundations, **not whole compiler correctness**.
+Compiler mode permits the inherited classical/extensionality axioms, the
+existing `SimplExpr.first_unused_ident` generator parameter, and CompCert's
+`external_functions_sem` / `inline_assembly_sem` parameters used by target
+operational semantics. It does not assert correctness of helpers or inline
+assembly. The stricter source-soundness allowlist is unchanged.
+
+The eBPF Asmgen proof now accepts the standard `Pbuiltin EF_memcpy` form without
+new admissions; fixed-size copies expand to loads/stores in `Asmexpand.ml`.
+Checked emission tests cover scratch registers, offsets, sizes and integer/
+pointer representation. Expansion itself remains a trusted boundary: there is
+no complete byte-copy refinement proof for arbitrary partial pointer fragments
+or undefined padding. Nested-option ELF compilation has succeeded; the current
+userspace emulator cannot execute its BPF subprogram calls. Kernel acceptance
+has not been established for that fixture.
+
+Validation at the paused scoped-binding/loop checkpoint: `make -j3 all`
+passed. All 13 native regression programs passed (the previous nine plus
+`option_match_shadow`, `option_scope_cases`, `underscore_binding_use`, and
+`loop_long_bounds`), as did the six escape-rejection fixtures. Run them with
+`make -C evaluation/tests native-check escape-rejections`. The compiler
+assumption audit passed 126 results (48 closed); the source audit passed 14
+results (one closed). Both independent `coqchk` targets
+(`compiler-kernel-check` and `soundness-kernel-check`) passed. The
+assumption-checker fixtures passed 5 positive,
+16 negative and 2 invocation checks. The newly registered scoped-value
+relation covers scalar/pointer/unit bindings; aggregate copied views and
+whole-program simulation remain open. No eBPF rebuild or Linux kernel run
+was performed for this final runtime snapshot; the eBPF results below belong
+to the preceding checkpoint and must not be presented as validation of these
+latest runtime changes.
+
+Validation at the rvalue/representation/tail-call checkpoint: the native and
+isolated eBPF compiler builds passed. All nine native regression executables
+passed, including the repaired tail-call case and the option, loop-index,
+parameter-collision and guarded-arithmetic cases. The compiler assumption audit
+passed 114 results (43 closed); the source audit passed 14 results. Both
+independent `coqchk` targets passed. Assumption-checker fixtures passed 5 positive,
+16 negative and 2 invocation checks. These checks exclude the still-open whole
+simulation and, at that earlier checkpoint, the pattern-shadowing counterexample
+that the newer checkpoint repairs.
+
+The escape gate rejected all six targeted escape fixtures with the intended
+diagnostic. All 45 examples and four applications compiled with the isolated
+eBPF compiler. Evaluation passed 37 supported emulations, all 51 rejection
+fixtures, and 33 evaluation-runner unit tests; 12 programs require kernel-specific
+execution and were marked unsupported by the emulator. Saved bytecode matched
+all 49 corresponding ELF sections. Source/compiler/object hash validation passed
+for all 49 prebuilt programs and the separately compiled nested-option fixture.
+The final proof-only inventory refresh left the compiler binary hash unchanged.
+No new kernel verification or execution run is claimed.
+
+The guarded-shift repair exposed a missing eBPF backend `Oshrlu` register-count
+case in the tracing programs. It now lowers to `Palu RSH W64`. The existing
+operation/compiler proofs recompiled unchanged, and `Asmgen_shift_tests.v`
+checks emitted instructions and unsigned-shift behavior. Independent `coqchk`
+of the backend proof and shift tests passed. All 49 evaluation
+programs compile again after this repair. The earlier alleged surface Bool-read
+mismatch was subsequently disproved by the checked canonical-read lemmas above.
+
+The latest nested-option eBPF fixture compiled successfully, and prebuilt
+source/compiler/object hash verification passed after exporting assembly, ELF,
+disassembly, XDP-section bytecode and separate subprogram-section bytecode.
+These artifacts are under `evaluation/.build/objects/xdp_nested_options.*`;
+`evaluation/results/nested-options-build.json` records compilation only.
+Kernel verification and execution were not run. The historical lifetime
+counterexample is retained for diagnosis; equivalent programs are now tested
+as required compiler rejections.
+
 ## First completed repair
 
 `cfrontend/BeePL_memory_proofs.v`: `store_well_typed_ext` now requires

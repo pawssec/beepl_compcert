@@ -93,4 +93,43 @@ if "$checker" "$fixture_dir/missing.log" > "$fixture_dir/output" 2>&1; then
     echo 'FAIL: nonexistent log accepted' >&2
     exit 1
 fi
-printf '%s\n' 'Assumption-checker fixtures passed (3 positive, 13 negative, 2 invocation checks).'
+# The compiler audit alone admits the existing gensym parameter.
+cat > "$fixture_dir/generator.log" <<'LOG'
+Axioms:
+first_unused_ident : unit -> ident
+SimplExpr.first_unused_ident : unit -> ident
+LOG
+expect_fail generator 'unexpected axiom: first_unused_ident'
+if ! "$checker" --compiler "$fixture_dir/generator.log" > "$fixture_dir/output" 2>&1; then
+    cat "$fixture_dir/output" >&2
+    echo 'FAIL: compiler mode rejected existing gensym parameter' >&2
+    exit 1
+fi
+cat > "$fixture_dir/compiler_project_axiom.log" <<'LOG'
+Axioms:
+SimplExpr.first_unused_ident : unit -> ident
+BeePL_fake.compiler_preservation : False
+LOG
+if "$checker" --compiler "$fixture_dir/compiler_project_axiom.log" > "$fixture_dir/output" 2>&1; then
+    echo 'FAIL: compiler mode accepted arbitrary project axiom' >&2
+    exit 1
+fi
+if ! grep -F 'unexpected axiom: BeePL_fake.compiler_preservation' "$fixture_dir/output" > /dev/null; then
+    cat "$fixture_dir/output" >&2
+    echo 'FAIL: compiler mode did not identify project axiom' >&2
+    exit 1
+fi
+
+# Target evaluation is parameterized by external-call and assembly semantics.
+cat > "$fixture_dir/target_semantics.log" <<'LOG'
+Axioms:
+external_functions_sem : string -> signature -> extcall_sem
+inline_assembly_sem : string -> signature -> extcall_sem
+LOG
+expect_fail target_semantics 'unexpected axiom: external_functions_sem'
+if ! "$checker" --compiler "$fixture_dir/target_semantics.log" > "$fixture_dir/output" 2>&1; then
+    cat "$fixture_dir/output" >&2
+    echo 'FAIL: compiler mode rejected target semantics parameters' >&2
+    exit 1
+fi
+printf '%s\n' 'Assumption-checker fixtures passed (5 positive, 16 negative, 2 invocation checks).'

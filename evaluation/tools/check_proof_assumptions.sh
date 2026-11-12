@@ -3,8 +3,13 @@
 # not whether the requested theorem set was complete; the caller chooses it.
 set -eu
 
+compiler_mode=0
+if [ "${1-}" = "--compiler" ]; then
+    compiler_mode=1
+    shift
+fi
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 PRINT_ASSUMPTIONS_LOG" >&2
+    echo "Usage: $0 [--compiler] PRINT_ASSUMPTIONS_LOG" >&2
     exit 2
 fi
 if [ ! -f "$1" ] || [ ! -r "$1" ]; then
@@ -13,7 +18,7 @@ if [ ! -f "$1" ] || [ ! -r "$1" ]; then
 fi
 
 # Read on stdin so a path beginning with '-' cannot become an awk option.
-LC_ALL=C awk '
+LC_ALL=C awk -v compiler_mode="$compiler_mode" '
 function reject(message) {
     print "Assumption audit: line " NR ": " message > "/dev/stderr"
     failed = 1
@@ -67,6 +72,19 @@ BEGIN {
     allowed["ClassicalDedekindReals.sig_forall_dec"] = 1
     allowed["FunctionalExtensionality.functional_extensionality_dep"] = 1
     allowed["Classical_Prop.classic"] = 1
+    # This is the existing extraction/gensym parameter, not an admitted
+    # semantic theorem. Source soundness mode intentionally does not allow it.
+    if (compiler_mode) {
+        # These are parameters of CompCert target evaluation, not claims
+        # that external calls or inline assembly have been verified.
+        allowed["external_functions_sem"] = 1
+        allowed["inline_assembly_sem"] = 1
+        allowed["Events.external_functions_sem"] = 1
+        allowed["Events.inline_assembly_sem"] = 1
+        allowed["first_unused_ident"] = 1
+        allowed["SimplExpr.first_unused_ident"] = 1
+        allowed["compcert.cfrontend.SimplExpr.first_unused_ident"] = 1
+    }
     identifier = "[[:alpha:]_][[:alnum:]_.\047]*"
 }
 {

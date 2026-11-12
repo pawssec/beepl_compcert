@@ -1,12 +1,17 @@
 (* Pending kernel acceptance: this fixture is deliberately outside examples/.
    Complete commands from the repository root:
 
-   1. Build the compiler, compile, and run the userspace instruction tests:
-      make -C evaluation/tests nested-options-check
-      Saves assembly (.s), ELF (.o), disassembly (.disasm), raw bytecode (.bin),
+   1. Build the compiler and save compiled artifacts:
+      make -C evaluation/tests nested-options-build
+      Saves assembly (.s), ELF (.o), disassembly (.disasm), entry bytecode (.bin),
+      subprogram bytecode (.text.bin),
       and source/compiler/object hashes in evaluation/.build/objects/.
-      Report: evaluation/results/nested-options-userspace.json
-      Userspace emulation does not establish kernel verifier acceptance.
+      Report: evaluation/results/nested-options-build.json
+      The loader uses the complete ELF .o, including subprogram relocations.
+      Compilation does not establish kernel verifier acceptance.
+      Optional: make -C evaluation/tests nested-options-check
+      The current emulator cannot execute BPF subprogram calls and reports
+      that limitation as a failure, not a passed execution test.
 
    2. Load the saved object through the Linux verifier and run packet tests:
       sudo make -C evaluation/tests nested-options-kernel-check

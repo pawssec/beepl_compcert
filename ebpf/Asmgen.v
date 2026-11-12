@@ -504,6 +504,12 @@ OK (Palu (CONV WOFDW) W64 r (inr Int.zero)  :: k)
       assertion_str ["Oshrlimm"] (mreg_eq a1 res);
       do r <- ireg_of res;
       OK (Palu ARSH W64 r (inr n) :: k)
+  | Oshrlu, a1 :: a2 :: nil =>
+      assertion_str ["Oshrlu"] (mreg_eq a1 res);
+      do r <- ireg_of res;
+      do r2 <- ireg_of a2;
+      OK (Palu RSH W64 r (inl r2) :: k)
+
   | Oshrluimm n, a1 :: nil =>
       assertion_str ["Oshrluimm"] (mreg_eq a1 res);
       do r <- ireg_of res;
@@ -670,7 +676,8 @@ Definition transl_store (sz:Z) (chunk: memory_chunk) (addr: addressing)
     one of the three registers already declared destroyed_by_builtin as the
     data temporary, excluding both address bases.  This also handles swapped
     argument registers and source=destination without parallel-move hazards.
-    Full aligned words use Many chunks to preserve pointer fragments. *)
+    Full aligned words use integer chunks: Mint64 reads both ordinary integer
+    bytes and complete pointer fragments on eBPF64 (Many64 rejects bytes). *)
 Definition memcpy_address (frame: Z) (arg: builtin_arg mreg)
     : res (ireg * ptrofs) :=
   match arg with
@@ -698,8 +705,8 @@ Fixpoint memcpy_chunks (fuel: nat) (remaining alignment delta: Z)
       if Z.leb remaining 0 then k else
       let '(width, bytes) :=
         if Archi.ptr64 && Z.leb 8 alignment && Z.leb 8 remaining
-        then (DBWordAny, 8%Z)
-        else if Z.leb 4 alignment && Z.leb 4 remaining then (WordAny, 4%Z)
+        then (DBWord, 8%Z)
+        else if Z.leb 4 alignment && Z.leb 4 remaining then (Word, 4%Z)
         else if Z.leb 2 alignment && Z.leb 2 remaining then (HalfWord, 2%Z)
         else (Byte, 1%Z) in
       Pload width tmp src (Ptrofs.add srcofs (Ptrofs.repr delta)) ::

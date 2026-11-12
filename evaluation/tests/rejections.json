@@ -43,5 +43,11 @@
   "packet_helper_flags": "Packet helper flags must be literal",
   "packet_helper_small_buffer": "argument type mismatch",
   "loop_nonunit_body": "For loop body must have unit type",
-  "nested_option_pointer_return": "Functions cannot return pointers"
+  "nested_option_pointer_return": "Functions cannot return pointers",
+  "ref_escape_nested_return": "Reference escape check failed",
+  "ref_escape_nested_option_return": "Reference escape check failed",
+  "ref_escape_loop_output": "Reference escape check failed",
+  "ref_escape_array_return": "Reference escape check failed",
+  "ref_escape_struct_output": "Reference escape check failed",
+  "ref_escape_forward_copy": "Reference escape check failed"
 }

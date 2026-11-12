@@ -952,14 +952,18 @@ Proof.
   rewrite set_res_other. rewrite undef_regs_other.
   rewrite <- H1. simpl. econstructor; eauto.
   eapply code_tail_next_int; eauto.
-  simpl; intros. destruct H4. congruence. destruct H4. congruence.
-  exploit list_in_map_inv; eauto. intros (mr & U & V). subst.
+  intros r Hin. change (In r (IR R1 :: IR R2 :: IR R3 :: nil)) in Hin.
+  destruct Hin as [<- | [<- | [<- | Hfalse]]]; discriminate || contradiction.
   auto with asmgen.
-  auto with asmgen.
-  apply agree_nextinstr. eapply agree_set_res; auto.
-  eapply agree_undef_regs; eauto. intros.
-  simpl. rewrite undef_regs_other_2; auto. Simpl.
-  congruence.
+  apply agree_ofs_nextinstr. constructor.
+  + eapply agree_set_res; [|exact B].
+    eapply agree_undef_regs; eauto using agree_regs. intros.
+    simpl. rewrite undef_regs_other_2; auto.
+  + rewrite set_res_other by reflexivity.
+    rewrite undef_regs_other by
+      (intros r Hin; change (In r (IR R1 :: IR R2 :: IR R3 :: nil)) in Hin;
+       destruct Hin as [<- | [<- | [<- | Hfalse]]]; discriminate || contradiction).
+    exact (agree_bp _ _ _ _ AG).
 
 - (* Mgoto *)
   assert (f0 = f) by congruence. subst f0.
