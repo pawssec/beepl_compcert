@@ -29,14 +29,42 @@ let warchi = if Archi.ptr64 then W64 else W32
 let chunk_of_pointer = if Archi.ptr64 then DBWord else Word
 
 (* Expansion of instructions *)
-let expand_alloc_frame sz ofs_ra ofs_link = ()
+let current_frame_size = ref BinNums.Z0
+
+let expand_alloc_frame sz ofs_ra ofs_link = current_frame_size := sz
 
 let expand_free_frame sz ofs_ra ofs_link = ()
 
 
+(* This static expansion belongs to the existing unverified pseudo-instruction
+   expansion boundary.  Asmgen's Qed simulation retains Pbuiltin semantics;
+   it does not claim a new memcpy-to-machine-instructions refinement proof. *)
+let memcpy_arg = function
+  | BA (IR r) ->
+      let reg = match r with
+        | R0 -> Machregs.I0 | R1 -> Machregs.I1 | R2 -> Machregs.I2
+        | R3 -> Machregs.I3 | R4 -> Machregs.I4 | R5 -> Machregs.I5
+        | R6 -> Machregs.I6 | R7 -> Machregs.I7 | R8 -> Machregs.I8
+        | R9 -> Machregs.I9
+        | R10 | BP -> raise (Error "Unsupported memcpy register argument") in
+      BA reg
+  | BA_addrstack ofs -> BA_addrstack ofs
+  | _ -> raise (Error "Memcpy requires register or stack addresses")
+
+let expand_memcpy size alignment args result =
+  match result with
+  | BR_none ->
+      begin match Asmgen.transl_memcpy !current_frame_size size alignment
+          (List.map memcpy_arg args) BR_none [] with
+      | Errors.OK instructions -> List.iter emit instructions
+      | Errors.Error _ -> raise (Error "Unsupported eBPF memcpy size, alignment, or offsets")
+      end
+  | _ -> raise (Error "Memcpy must not return a value")
+
 let expand_instruction instr =
   match instr with
-  | Pbuiltin _ -> failwith "Builtin are not supported"
+  | Pbuiltin (EF_memcpy (size, alignment), args, result) -> expand_memcpy size alignment args result
+  | Pbuiltin _ -> raise (Error "Builtin is not supported by eBPF")
   | Pallocframe(sz,ofs_ra,ofs_link) -> expand_alloc_frame sz ofs_ra ofs_link
   | Pfreeframe(sz,ofs_ra,ofs_link)  -> expand_free_frame sz ofs_ra ofs_link
   | Pcmp(cmp,w,reg,regimm) ->
@@ -88,6 +116,7 @@ let initialize_entry_registers id code =
 
 let expand_function id fn =
   try
+    current_frame_size := BinNums.Z0;
     set_current_function fn;
     expand id (int_reg_to_dwarf R10) preg_to_dwarf expand_instruction
       (initialize_entry_registers id fn.fn_code);

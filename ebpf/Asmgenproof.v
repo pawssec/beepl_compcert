@@ -225,6 +225,7 @@ Proof.
 - eapply transl_store_label; eauto.
 - destruct s0; monadInv H; TailNoLabel.
 (* - destruct s0; monadInv H; TailNoLabel. *)
+- destruct e; monadInv H; TailNoLabel.
 - eapply transl_cbranch_label; eauto.
 Qed.
 
@@ -932,7 +933,33 @@ Proof.
   rewrite Pregmap.gss. unfold Genv.symbol_address. rewrite symbols_preserved. rewrite H. auto.
 *)
 - (* Mbuiltin *)
-  inv AT. monadInv H4.
+  inv AT. monadInv H4. destruct ef; monadInv EQ0.
+  exploit functions_transl; eauto. intro FN.
+  generalize (transf_function_no_overflow _ _ H3); intro NOOV.
+  exploit builtin_args_match; eauto using agree_regs. intros [vargs' [P Q]].
+  exploit external_call_mem_extends; eauto.
+  intros [vres' [m2' [A [B [C D]]]]].
+  left. econstructor; split. apply plus_one.
+  eapply exec_step_builtin. eauto. eauto.
+  eapply find_instr_tail; eauto.
+  erewrite <- sp_val by eauto using agree_regs.
+  eapply eval_builtin_args_preserved with (ge1 := ge); eauto. exact symbols_preserved.
+  eapply external_call_symbols_preserved; eauto. apply senv_preserved.
+  eauto.
+  econstructor; eauto.
+  instantiate (2 := tf); instantiate (1 := x).
+  unfold nextinstr. rewrite Pregmap.gss.
+  rewrite set_res_other. rewrite undef_regs_other.
+  rewrite <- H1. simpl. econstructor; eauto.
+  eapply code_tail_next_int; eauto.
+  simpl; intros. destruct H4. congruence. destruct H4. congruence.
+  exploit list_in_map_inv; eauto. intros (mr & U & V). subst.
+  auto with asmgen.
+  auto with asmgen.
+  apply agree_nextinstr. eapply agree_set_res; auto.
+  eapply agree_undef_regs; eauto. intros.
+  simpl. rewrite undef_regs_other_2; auto. Simpl.
+  congruence.
 
 - (* Mgoto *)
   assert (f0 = f) by congruence. subst f0.

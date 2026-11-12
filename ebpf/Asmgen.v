@@ -666,6 +666,65 @@ Definition transl_store (sz:Z) (chunk: memory_chunk) (addr: addressing)
   | _, _ => Error(msg "Asmgen.transl_store")
   end.
 
+(** Fixed-size memcpy.  Both original address registers stay intact; choose
+    one of the three registers already declared destroyed_by_builtin as the
+    data temporary, excluding both address bases.  This also handles swapped
+    argument registers and source=destination without parallel-move hazards.
+    Full aligned words use Many chunks to preserve pointer fragments. *)
+Definition memcpy_address (frame: Z) (arg: builtin_arg mreg)
+    : res (ireg * ptrofs) :=
+  match arg with
+  | BA r => do base <- ireg_of r; OK (base, Ptrofs.zero)
+  | BA_addrstack ofs => OK (R10, transl_stack_offset frame ofs)
+  | _ => Error (msg "eBPF memcpy requires register or stack addresses")
+  end.
+
+Definition memcpy_scratch (dst src: ireg) : ireg :=
+  if ireg_eq R1 dst then
+    if ireg_eq R2 src then R3 else R2
+  else if ireg_eq R1 src then
+    if ireg_eq R2 dst then R3 else R2
+  else R1.
+
+Definition memcpy_offset_range (base: ptrofs) (size: Z) : bool :=
+  Z.leb (-32768) (Ptrofs.signed base) &&
+  Z.leb (Ptrofs.signed base + Z.max 0 (size - 1)) 32767.
+
+Fixpoint memcpy_chunks (fuel: nat) (remaining alignment delta: Z)
+    (dst src tmp: ireg) (dstofs srcofs: ptrofs) (k: code) : code :=
+  match fuel with
+  | O => k
+  | Datatypes.S fuel' =>
+      if Z.leb remaining 0 then k else
+      let '(width, bytes) :=
+        if Archi.ptr64 && Z.leb 8 alignment && Z.leb 8 remaining
+        then (DBWordAny, 8%Z)
+        else if Z.leb 4 alignment && Z.leb 4 remaining then (WordAny, 4%Z)
+        else if Z.leb 2 alignment && Z.leb 2 remaining then (HalfWord, 2%Z)
+        else (Byte, 1%Z) in
+      Pload width tmp src (Ptrofs.add srcofs (Ptrofs.repr delta)) ::
+      Pstore width dst (inl tmp) (Ptrofs.add dstofs (Ptrofs.repr delta)) ::
+      memcpy_chunks fuel' (remaining - bytes) alignment (delta + bytes)
+        dst src tmp dstofs srcofs k
+  end.
+
+Definition transl_memcpy (frame size alignment: Z)
+    (args: list (builtin_arg mreg)) (result: builtin_res mreg) (k: code) : res code :=
+  match args, result with
+  | dstarg :: srcarg :: nil, BR_none =>
+      if Z.leb 0 size && Z.leb size 32768 &&
+         (Z.eqb alignment 1 || Z.eqb alignment 2 || Z.eqb alignment 4 || Z.eqb alignment 8)
+      then
+        do dst <- memcpy_address frame dstarg;
+        do src <- memcpy_address frame srcarg;
+        if memcpy_offset_range (snd dst) size && memcpy_offset_range (snd src) size
+        then OK (memcpy_chunks (Z.to_nat size) size alignment 0
+          (fst dst) (fst src) (memcpy_scratch (fst dst) (fst src)) (snd dst) (snd src) k)
+        else Error (msg "eBPF memcpy offset exceeds signed 16-bit addressing")
+      else Error (msg "eBPF memcpy requires size 0..32768 and alignment 1, 2, 4 or 8")
+  | _, _ => Error (msg "eBPF memcpy requires two addresses and no result")
+  end.
+
 (** Translation of a Mach instruction. *)
 Definition name_of_builtin (ef:external_function) : string :=
   match ef with
@@ -714,6 +773,10 @@ Definition transl_instr (f: Mach.function) (i: Mach.instruction)
 
   | Mtailcall sig (inl r) => Error (msg "Indirect (tail) calls are not implemented")
 
+  | Mbuiltin (EF_memcpy size alignment) args res =>
+      do validated <- transl_memcpy f.(fn_stacksize) size alignment args res nil;
+      OK (Pbuiltin (EF_memcpy size alignment)
+        (List.map (map_builtin_arg preg_of) args) (map_builtin_res preg_of res) :: k)
   | Mbuiltin ef args res => Error (MSG "Builtin ":: MSG (name_of_builtin ef) :: MSG " is not supported by eBPF"::nil)
 
   | Mlabel lbl => OK (Plabel lbl :: k)
