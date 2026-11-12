@@ -33,6 +33,7 @@ rule read_token = parse
   | "match"         { MATCH }
   | "with"          { WITH }
   | "->"            { ARROW }
+  | "option"        { OPTION }
   | "some"          { OSOME }
   | "none"          { ONONE }
   | "|"             { BAR }

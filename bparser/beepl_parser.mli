@@ -71,6 +71,7 @@ type token =
   | ORAINT16
   | ORABOOL
   | OR
+  | OPTION
   | ONONE
   | OEQ
   | NOVARARG

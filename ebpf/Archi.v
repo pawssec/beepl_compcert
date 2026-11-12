@@ -10,7 +10,7 @@
 (*                                                                     *)
 (* *********************************************************************)
 
-(** Architecture-dependent parameters for x86 in 32-bit mode *)
+(** Architecture-dependent parameters for 64-bit eBPF *)
 
 From Flocq Require Import Binary Bits.
 Require Import ZArith List.
@@ -24,7 +24,8 @@ Definition ptr64 := true.
 
 Definition big_endian := false.
 
-Definition align_int64 := 4%Z.
+(* The BPF ABI aligns 64-bit integers to 8 bytes, matching Mint64 accesses. *)
+Definition align_int64 := 8%Z.
 Definition align_float64 := 4%Z.
 
 Definition splitlong := false.

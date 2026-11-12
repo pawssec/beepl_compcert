@@ -48,6 +48,8 @@ match e with
 | Ebytes es t => max_ident_exprs max_ident_expr es
 | Ainit a t es t' => max_ident a (max_ident_exprs max_ident_expr es)
 | Aaccess a t n t' => a
+| CallFrame _ body _ => max_ident_expr body
+| LoopFrame _ template active => Pos.max (max_ident_expr template) (max_ident_expr active)
 end.
 
 Definition max_ident_function (f : function) : ident :=
@@ -206,6 +208,8 @@ match e with
 | Ainit a t es t' => let rs := rename_exprs rename_expr p next es ls in 
                      (Ainit a t rs.1.1 t', rs.1.2, rs.2)
 | Aaccess a t n t' => (Aaccess a t n t', next, ls)
+| CallFrame vm body t => (CallFrame vm body t, next, ls)
+| LoopFrame n template active => (LoopFrame n template active, next, ls)
 end.
 
 (*Definition x := 2%positive.

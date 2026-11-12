@@ -38,5 +38,10 @@
   "cgroup_wrong_layout": "Socket-create context layout must be",
   "cgroup_wrong_context": "Section attribute related",
   "cgroup_whole_context": "Socket-create context only supports",
-  "cgroup_context_write": "Socket-create context is read-only"
+  "cgroup_context_write": "Socket-create context is read-only",
+  "packet_helper_length": "Packet helper length must be literal",
+  "packet_helper_flags": "Packet helper flags must be literal",
+  "packet_helper_small_buffer": "argument type mismatch",
+  "loop_nonunit_body": "For loop body must have unit type",
+  "nested_option_pointer_return": "Functions cannot return pointers"
 }

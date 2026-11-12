@@ -227,10 +227,10 @@ BACKEND=\
 
 # C front-end modules (in cfrontend/)
 
-CFRONTEND=BeePL_mem.v BeePL_aux.v BeePL.v BeePL_notations.v \
+CFRONTEND=BeePL_mem.v BeePL_aux.v BeePL.v BeePL_packet.v BeePL_packet_proofs.v BeePL_notations.v \
   BeePL_auxlemmas.v BeePL_helper_functions.v BeePL_sem.v \
   BeePL_typechecker.v BeePL_typesystem.v Type_proof_C.v \
-  BeePL_safety.v BeePL_memory_proofs.v BeePL_operators_proofs.v BeePL_typesystem_proofs.v \
+  BeePL_safety.v BeePL_memory_proofs.v BeePL_operators_proofs.v BeePL_typesystem_proofs.v BeePL_proof_audit.v BeePL_soundness_memory.v BeePL_soundness_operators.v BeePL_substitution_freevars.v BeePL_substitution_proofs.v BeePL_soundness_store.v BeePL_runtime_locations.v BeePL_soundness_fields.v BeePL_allocation_proofs.v BeePL_initialization_proofs.v BeePL_layout_proofs.v BeePL_structure_proofs.v BeePL_array_proofs.v BeePL_soundness_arrays.v BeePL_soundness_variables.v BeePL_soundness_state.v BeePL_call_bindings.v BeePL_parameter_allocations.v BeePL_call_memory.v BeePL_call_state.v BeePL_call_entry.v BeePL_function_variables.v BeePL_callable_locations.v BeePL_callable_variables.v BeePL_callable_state.v BeePL_callable_entry.v BeePL_environment_preservation.v BeePL_runtime_frames.v BeePL_context_retyping.v BeePL_frame_free.v BeePL_frame_configurations.v BeePL_runtime_substitution.v BeePL_runtime_call_entry.v BeePL_type_equality.v BeePL_call_determinism.v BeePL_application_configuration.v BeePL_application_preservation.v BeePL_frame_regressions.v BeePL_scalar_parameters.v BeePL_scalar_parameter_allocations.v BeePL_scalar_arguments.v BeePL_code_contracts.v BeePL_scalar_parameter_bindings.v BeePL_scalar_call_layout.v BeePL_scalar_call_preparation.v BeePL_scalar_runtime_entry.v BeePL_scalar_call_determinism.v BeePL_scalar_application_preservation.v BeePL_option_representation.v BeePL_scalar_reference_regressions.v BeePL_option_checker_regressions.v BeePL_call_parameters.v BeePL_unit_regressions.v BeePL_value_parameter_bindings.v BeePL_call_parameter_layout.v BeePL_parameter_call_preparation.v BeePL_parameter_runtime_entry.v BeePL_parameter_application_preservation.v BeePL_aggregate_memory.v BeePL_aggregate_dereference.v BeePL_interior_array_regressions.v BeePL_copy_bytes.v BeePL_copy_cells.v BeePL_copy_regressions.v BeePL_aggregate_copy.v BeePL_aggregate_copy_regressions.v BeePL_array_copy_layout.v BeePL_structure_copy_layout.v BeePL_fresh_copy.v BeePL_fresh_aggregate_memory.v BeePL_aggregate_reference.v BeePL_aggregate_reference_regressions.v BeePL_object_paths.v BeePL_scalar_object_layout.v BeePL_object_separation.v BeePL_object_coverage.v BeePL_covered_reads.v BeePL_initialized_reference.v BeePL_object_coverage_regressions.v BeePL_aggregate_array_elements.v BeePL_aggregate_array_reads.v BeePL_nested_array_execution.v BeePL_initializer_frames.v BeePL_array_object_coverage.v BeePL_initialized_arrays.v BeePL_initialized_parameters.v BeePL_initialized_array_execution.v BeePL_initialized_structures.v BeePL_initialized_call_entry.v BeePL_initialized_variables.v BeePL_block_extents.v BeePL_heap_extents.v BeePL_callable_array_objects.v BeePL_callable_scalar_arrays.v BeePL_extent_copy_readiness.v BeePL_packet_schema_check.v BeePL_packet_schema_audit.v BeePL_packet_header_extents.v BeePL_packet_header_layout.v BeePL_initialized_packet_header.v BeePL_parameter_extents.v BeePL_initialized_runtime.v BeePL_program_runtime.v BeePL_initialized_application_entry.v BeePL_initialized_configurations.v BeePL_initialized_structure_configurations.v BeePL_initialized_application_preservation.v BeePL_initialized_substitution.v BeePL_initialized_lists.v BeePL_initialized_contexts.v BeePL_initialized_control.v BeePL_initialized_mutation.v BeePL_layout_coherence.v BeePL_coherent_configurations.v BeePL_coherent_copy.v BeePL_coherent_parameters.v BeePL_coherent_call_entry.v BeePL_coherent_application_entry.v BeePL_coherent_application_preservation.v BeePL_coherent_structures.v BeePL_coherent_references.v BeePL_coherent_reference_execution.v BeePL_unit_arrays.v BeePL_program_member_types.v BeePL_initialized_unit_arrays.v BeePL_coherent_reads.v BeePL_initialized_aggregate_mutation.v BeePL_coherent_operators.v BeePL_coherent_loops.v BeePL_structure_mutation_footprint.v BeePL_loop_execution.v BeePL_checker_consistency.v BeePL_strict_progress.v BeePL_function_parameters.v BeePL_function_parameter_storage.v BeePL_function_parameter_bindings.v BeePL_function_parameter_entry.v BeePL_function_parameter_determinism.v BeePL_function_parameter_regressions.v BeePL_literal_consistency.v BeePL_cast_soundness.v BeePL_branch_cast_checker.v BeePL_coherent_casts.v BeePL_coherent_control.v BeePL_bool_cast_compiler.v BeePL_cast_evaluation.v BeePL_volatile_audit.v BeePL_object_finiteness.v BeePL_finite_reachability.v BeePL_memory_checker.v BeePL_object_edges.v BeePL_function_array_audit.v BeePL_worklist_reachability.v BeePL_object_decision.v BeePL_value_checker.v BeePL_packet_descriptor_copy.v BeePL_storage_types.v BeePL_array_storage_typing.v BeePL_structure_storage_typing.v BeePL_packet_state.v BeePL_bytes_layout.v BeePL_bytes_execution.v BeePL_structure_variables.v BeePL_packet_heap.v BeePL_packet_bindings.v BeePL_packet_copy.v BeePL_packet_replacement.v BeePL_packet_object_layout.v BeePL_packet_object_coherence.v BeePL_packet_location_coherence.v BeePL_packet_alignment.v BeePL_scalar_object_coherence.v BeePL_initializer_slot.v BeePL_general_array_initialization.v BeePL_copy_array_initialization.v BeePL_structure_initializer_slots.v BeePL_scalar_structure_coverage.v BeePL_parameter_storage_check.v BeePL_storage_parameter_allocations.v BeePL_call_storage_audit.v BeePL_function_array_state_audit.v BeePL_initializer_determinism.v BeePL_array_copy_sources.v BeePL_array_packet_assembly.v BeePL_copy_array_heap.v BeePL_scalar_array_heap.v BeePL_general_array_configurations.v BeePL_general_array_reads.v BeePL_general_named_array_reads.v BeePL_coherent_aggregate_dereference.v BeePL_coherent_lists.v BeePL_coherent_array_contexts.v BeePL_coherent_memory_contexts.v BeePL_general_reference_heads.v BeePL_reference_induction.v BeePL_general_memory_heads.v BeePL_aggregate_parameter_heap.v BeePL_scalar_parameter_heap.v BeePL_bytes_parameter_heap.v BeePL_structure_copy_regions.v BeePL_declared_copy_field.v BeePL_coherent_literals.v BeePL_loop_freevars_audit.v BeePL_typed_substitution_freevars.v BeePL_match_arity.v BeePL_packet_match_freevars.v BeePL_step_freevars.v BeePL_coherent_loop_contexts.v BeePL_mixed_structure_fields.v BeePL_mixed_structure_coverage.v BeePL_mixed_structure_heap.v BeePL_mixed_structure_configurations.v BeePL_coherent_scope_cases.v BeePL_coherent_option_cases.v BeePL_parameter_slot_heap.v BeePL_memory_induction.v BeePL_field_induction.v BeePL_coherent_match_cases.v BeePL_coherent_array_cases.v BeePL_coherent_for_cases.v BeePL_parameter_heap_fold.v BeePL_general_call_preparation.v BeePL_general_callee_bindings.v BeePL_general_call_entry.v BeePL_general_call_determinism.v BeePL_general_application.v BeePL_legacy_soundness_audit.v BeePL_program_induction.v BeePL_program_control_cases.v BeePL_program_leaf_cases.v BeePL_program_composite_cases.v BeePL_program_primitive_case.v BeePL_program_structure_case.v BeePL_program_application_case.v BeePL_program_soundness_assembly.v BeePL_program_multistep.v BeePL_initial_program.v BeePL_initial_program_execution.v BeePL_nested_option_model.v BeePL_nested_option_tags.v BeePL_nested_option_elaboration.v BeePL_parameter_packet_assembly.v BeePL_structure_initializer_determinism.v BeePL_scalar_structure_preservation.v BeePL_structure_copy_slots.v BeePL_compatible_copy_slot.v BeePL_copy_parameter_binding.v BeePL_general_parameter_binding.v BeePL_structure_field_planning.v BeePL_scalar_structure_heap.v BeePL_empty_array_reference.v BeePL_located_aggregate_reference.v BeePL_copy_array_coverage.v BeePL_copy_array_views.v BeePL_initializer_coherence.v BeePL_scalar_location_coherence.v BeePL_coherent_fields.v BeePL_packet_mutation.v BeePL_packet_coverage.v BeePL_bytes_fields.v BeePL_nested_unit_array_copy.v BeePL_structure_source_regressions.v BeePL_structure_object_coverage.v BeePL_call_frames.v BeePL_function_scope_proofs.v BeePL_loop_proofs.v \
   BeePL_alpha_renaming.v BeePL_Check_Reserved_Struct.v BeePL_Bytes_Struct.v BeePL_Wrapper_Pass.v BeePL_Csyntax.v \
   BeePL_compiler_proofs.v Ctypes.v Cop.v Csyntax.v Csem.v Ctyping.v Cstrategy.v Cexec.v \
   Initializers.v Initializersproof.v \
@@ -300,6 +300,16 @@ endif
 
 proof: $(FILES:.v=.vo)
 
+# Re-run the dependency audit even when all proof objects are up to date.
+soundness-check: cfrontend/BeePL_typesystem_proofs.vo cfrontend/BeePL_initial_program_execution.vo
+	@mkdir -p evaluation/results
+	@echo "Auditing BeePL source soundness assumptions"
+	@$(COQEXEC) cfrontend/BeePL_soundness_assumptions.v > evaluation/results/type-soundness-assumptions.log
+	@sh evaluation/tools/check_proof_assumptions.sh evaluation/results/type-soundness-assumptions.log
+
+soundness-kernel-check: soundness-check
+	@$(COQCHK) -silent compcert.cfrontend.BeePL_typesystem_proofs compcert.cfrontend.BeePL_initial_program_execution
+
 extraction: extraction/STAMP
 
 extraction/STAMP: $(FILES:.v=.vo) extraction/extraction.v $(ARCH)/extractionMachdep.v
@@ -330,7 +340,7 @@ runtime:
 
 FORCE:
 
-.PHONY: proof extraction runtime FORCE
+.PHONY: proof soundness-check soundness-kernel-check extraction runtime FORCE
 
 documentation: $(FILES)
 	mkdir -p doc/html
@@ -413,11 +423,15 @@ cparser/Parser.v: cparser/Parser.vy
 	$(MENHIR) --coq --coq-no-version-check cparser/Parser.vy
 	@chmod a-w $@
 
-depend: $(GENERATED) depend1
+depend: $(GENERATED) .depend
 
-depend1: $(FILES)
+depend1: .depend
+
+# Refresh imported-module dependencies when Coq sources or the module list
+# change, including for direct .vo targets and parallel builds.
+.depend: $(FILES) Makefile
 	@echo "Analyzing Coq dependencies"
-	@$(COQDEP) $^ > .depend
+	@$(COQDEP) $(filter %.v,$^) > $@.tmp && mv $@.tmp $@
 
 install:
 	install -d $(DESTDIR)$(BINDIR)

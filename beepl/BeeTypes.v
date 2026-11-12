@@ -1,6 +1,7 @@
 
 Require Import String ZArith Coq.FSets.FMapAVL Coq.Structures.OrderedTypeEx.
 Require Import Coq.FSets.FSetProperties Coq.FSets.FMapFacts FMaps FSetAVL PeanoNat Coq.NArith.BinNat Ctypes Errors Ctypes Coq.ZArith.Znumtheory Coqlib.
+Require Import Memdata.
 Require Import Coq.Arith.EqNat Coq.ZArith.Int Integers AST Maps SimplExpr Coq.Strings.BinaryString  Coq.Numbers.DecimalString.
 From mathcomp Require Import all_ssreflect. 
 From compcert Require Import Csyntaxdefs Ctyping. 
@@ -196,6 +197,8 @@ End translate_types.
 
 Definition mem_ident : ident := $"mem_ident".
 Definition bytes_t : ident := $"bytes_t".
+Definition bytes_start : ident := $"bytes_start".
+Definition bytes_end : ident := $"bytes_end".
 
 Fixpoint transBeePL_type (t : BeeTypes.type) : Ctypes.type :=
   match t with
@@ -321,7 +324,7 @@ Fixpoint bcomplete_members (env: bcomposite_env) (ms: list bmember) : bool :=
   | m :: ms => bcomplete_type env (type_bmember m) && bcomplete_members env ms
   end.
 
-Program Definition bcomposite_of_def
+Program Definition bcomposite_layout_of_def
      (env: bcomposite_env) (id: ident) (su: struct_or_union) (m: list bmember) (a: attr)
      : res bcomposite :=
   match env!id, bcomplete_members env m return _ with
@@ -352,6 +355,66 @@ Next Obligation.
   apply Coqlib.align_divides. apply alignof_composite_pos.
 Defined.
 
+(* The executable source semantics implements ordinary structures and plain
+   fields. Validate alignment at inline uses as well as at the definition:
+   C attributes can otherwise weaken actual field placement. Pointer
+   pointees are not inline storage and are not traversed. *)
+Definition btype_local_alignment_safe (env : bcomposite_env) (t : type) : bool :=
+  let ce := bcomposite_composite_env env in
+  let ct := transBeePL_type t in
+  let natural := Ctypes.alignof ce (Ctypes.remove_attributes ct) in
+  let actual := Ctypes.alignof ce ct in
+  Z.leb natural actual.
+
+Fixpoint btype_inline_alignment_safe (env : bcomposite_env) (t : type) : bool :=
+  btype_local_alignment_safe env t &&
+  match t with
+  | Atype element _ _ => btype_inline_alignment_safe env element
+  | _ => true
+  end.
+
+Fixpoint bmembers_layout_safe (env : bcomposite_env) (members : list bmember) : bool :=
+  match members with
+  | nil => true
+  | Member_plain _ ty :: rest =>
+      btype_inline_alignment_safe env ty && bmembers_layout_safe env rest
+  | Member_bitfield _ _ _ _ _ _ :: _ => false
+  end.
+
+Definition bcomposite_layout_safe (env : bcomposite_env)
+    (su : struct_or_union) (members : list bmember) (a : attr) : bool :=
+  match su with
+  | Union => false
+  | Struct =>
+      bmembers_layout_safe env members &&
+      let natural := alignof_composite (bcomposite_composite_env env)
+        (bmembers_cmembers members) in
+      Z.leb natural (align_attr a natural)
+  end.
+
+Definition bcomposite_of_def
+    (env : bcomposite_env) (id : ident) (su : struct_or_union)
+    (members : list bmember) (a : attr) : res bcomposite :=
+  if bcomposite_layout_safe env su members a then
+    bcomposite_layout_of_def env id su members a
+  else Error (MSG "Unsupported composite shape or unsafe inline alignment " :: CTX id :: nil).
+
+Lemma bcomposite_of_def_layout_safe : forall env id su members a co,
+  bcomposite_of_def env id su members a = OK co ->
+  bcomposite_layout_safe env su members a = true.
+Proof.
+  intros env id su members a co. unfold bcomposite_of_def.
+  destruct (bcomposite_layout_safe env su members a); intros H; try discriminate; reflexivity.
+Qed.
+
+Lemma bcomposite_of_def_layout_result : forall env id su members a co,
+  bcomposite_of_def env id su members a = OK co ->
+  bcomposite_layout_of_def env id su members a = OK co.
+Proof.
+  intros env id su members a co. unfold bcomposite_of_def.
+  destruct (bcomposite_layout_safe env su members a); intros H; try discriminate; exact H.
+Qed.
+
 (** The composite environment for a program is obtained by entering
   its composite definitions in sequence.  The definitions are assumed
   to be listed in dependency order: the definition of a composite
@@ -365,8 +428,18 @@ Fixpoint add_bcomposite_definitions (env: bcomposite_env) (defs: list bcomposite
       add_bcomposite_definitions (PTree.set id co env) defs
   end.
 
+(* Bytes is an intrinsic complete type. Install its representation before
+   laying out user composites, including when Bytes occurs only in a field.
+   Passing the reserved name again is rejected as a duplicate definition. *)
+Definition bytes_bcomposite_definition : bcomposite_definition :=
+  Bcomposite bytes_t Struct
+    (Member_plain bytes_start
+      (Ptrtype (Reftype (Bprim (Tint I8 Unsigned noattr)) noattr)) ::
+     Member_plain bytes_end
+      (Ptrtype (Reftype (Bprim (Tint I8 Unsigned noattr)) noattr)) :: nil) noattr.
+
 Definition build_bcomposite_env (defs: list bcomposite_definition) :=
-  add_bcomposite_definitions (PTree.empty _) defs.
+  add_bcomposite_definitions (PTree.empty _) (bytes_bcomposite_definition :: defs).
 
 
 Definition wf_bcomposites (types: list bcomposite_definition) : Prop :=
@@ -554,6 +627,17 @@ Definition signedness_of_type (t : type) : option signedness :=
   | Bytes => None
 end.
 
+(* C promotes narrow integers to signed int32 before arithmetic. Safety
+   guards must use that arithmetic signedness, not the storage signedness. *)
+Definition promoted_integer_signedness (sz : intsize) (s : signedness) : signedness :=
+  match sz with I32 => s | _ => Signed end.
+
+Definition arithmetic_signedness_of_type (t : type) : option signedness :=
+  match t with
+  | Vtype (Tint sz s _) => Some (promoted_integer_signedness sz s)
+  | _ => signedness_of_type t
+  end.
+
 Definition wtype_of_primitive (pt : primitive_type) : wtype :=
   match pt with
   | Tbool => Twbool
@@ -726,13 +810,13 @@ Definition access_mode_type (t : type) : mode :=
 
 Definition chunk_of_ptype (ty: primitive_type) :=
 match ty with
-| Tbool => (*BMint8signed*) BMint32
-| Tint I8 Signed _ => (*BMint8signed*) BMint32
-| Tint I8 Unsigned _ => (*BMint8unsigned*) BMint32
-| Tint I16 Signed _ => (*BMint16signed*) BMint32
-| Tint I16 Unsigned _ => (*BMint16unsigned*) BMint32
+| Tbool => BMbool
+| Tint I8 Signed _ => BMint8signed
+| Tint I8 Unsigned _ => BMint8unsigned
+| Tint I16 Signed _ => BMint16signed
+| Tint I16 Unsigned _ => BMint16unsigned
 | Tint I32 _ _ => BMint32
-| Tint IBool _ _ => (*BMbool*) BMint32
+| Tint IBool _ _ => BMint8unsigned
 | Tlong _ _ => BMint64
 end.
 
@@ -870,7 +954,7 @@ Fixpoint sizeof_type (env : bcomposite_env) (t : BeeTypes.type) : Z :=
   | Stype x _ => match env!x with Some co => co_sizeof co | None => 0 end
   | Atype t' z a => sizeof_type env t' * Z.max 0 z
   | Ftype _ _ _ _ => 1
-  | Bytes => 16
+  | Bytes => 2 * size_chunk Mptr
   end.
 
 Fixpoint sizeof_types (env : bcomposite_env) (ts : list type) : Z :=

@@ -1034,9 +1034,16 @@ let parse_bpl_ast (filename : string) : Beepl_ast.program =
 
 let parse_and_transform_bpl (filename : string) : BeePL.program =
   let program = parse_bpl_ast filename in
-  (* AST typecheck BEFORE lowering to Coq AST *)
-  (try Beepl_ast_typechecker.infer_program program with
+  (* Check surface restrictions before representation lowering, then check the
+     generated records too. In particular lowering must not bypass the ban on
+     returning references to local storage. *)
+  let program = try
+    Beepl_ast_typechecker.infer_program program;
+    let lowered = Beepl_nested_options.lower_program program in
+    Beepl_ast_typechecker.infer_program lowered;
+    lowered
+  with
    | Beepl_ast_typechecker.TypeError msg ->
        Printf.eprintf "%s: type error: %s\n" filename msg;
-       exit 2);
+       exit 2 in
   transform_program program

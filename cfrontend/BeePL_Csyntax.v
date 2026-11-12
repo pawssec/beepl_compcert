@@ -23,6 +23,20 @@ Record bcompiler_ctx := { arg_ctx : list (ident * type);
 
 Definition max_fresh : nat := 1000%nat.
 
+(* BeePL Bool uses a uint8 representation. Preserve its cast-then-truncate
+   policy, then canonicalize the resulting byte to the encoded Bool 0 or 1.
+   The operand occurs once, including when it has effects. *)
+Definition trans_cast_expression (target : BeeTypes.type) (operand : Csyntax.expr) : Csyntax.expr :=
+  let ct := transBeePL_type target in
+  match target with
+  | Vtype Tbool =>
+      Ecast (Ebinop Cop.One (Ecast operand ct)
+        (Eval (Values.Vint Int.zero) ct)
+        (Ctypes.Tint I32 Signed noattr)) ct
+  | _ => Ecast operand ct
+  end.
+
+
 (* ------------------------------------------------------------------ *)
 (* Renaming environment                                                *)
 (* ------------------------------------------------------------------ 
@@ -360,11 +374,16 @@ match e with
                             ret ((Ederef (hd default_expr (exprlist_list_expr (fst ces))) 
                                 ct), snd ces, bctx')   
                  | Massgn => do (ces, bctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es fn_ctx bctx);
-                                        let ct := (transBeePL_type t) in
-                                        ret ((Eassign (Ederef (hd default_expr (exprlist_list_expr (fst ces))) 
-                                                         (typeof (hd default_expr (exprlist_list_expr (fst ces)))))
-                                                (hd default_expr (tl (exprlist_list_expr (fst ces))))
-                                                ct), snd ces, bctx')
+                     let pointer := hd default_expr (exprlist_list_expr (fst ces)) in
+                     let value := hd default_expr (tl (exprlist_list_expr (fst ces))) in
+                     match typeof pointer with
+                     | Tpointer target _ =>
+                         (* Store the pointee width, not the pointer width.
+                            The source assignment has unit result. *)
+                         ret (Ecast (Eassign (Ederef pointer target) value target) (transBeePL_type t),
+                              snd ces, bctx')
+                     | _ => error (msg "COMPILER ERROR: Assignment requires a reference")
+                     end
                  | Uop o => do (ces, bctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es fn_ctx bctx);
                             let ct := (transBeePL_type t) in
                             ret ((Eunop o
@@ -391,9 +410,20 @@ match e with
                                         (transBeePL_type t), snd ces, bctx')
 
                            end
+               | ArrayRead n => match es with
+                   | e :: nil =>
+                     do len <- get_array_len (typeof_expr e);
+                     if (n <? Z.to_nat len)%nat then
+                       do (ce, bctx') <- transBeePL_expr_expr e fn_ctx bctx;
+                       ret (Evalof (Ederef (Ebinop Cop.Oadd (fst ce)
+                         (Eval (Values.Vint (Int.repr (Z.of_nat n))) tint)
+                         (tptr (transBeePL_type t))) (transBeePL_type t))
+                         (transBeePL_type t), snd ce, bctx')
+                     else error (msg "Array read index out of bounds")
+                   | _ => error (msg "Array read expects one argument")
+                   end
                | Cast t' => do (ces, bctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es fn_ctx bctx);
-                           let ct := (transBeePL_type t') in
-                           ret (Ecast (hd default_expr (exprlist_list_expr (fst ces))) ct, snd ces, bctx')
+                           ret (trans_cast_expression t' (hd default_expr (exprlist_list_expr (fst ces))), snd ces, bctx')
 end
 | Bind x t e1 e2 t' => let ct := transBeePL_type t in
                        do (ce1, ctx1) <- transBeePL_expr_expr e1 fn_ctx bctx;
@@ -552,6 +582,7 @@ end
 | Ebytes es t => do (ces, bctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es fn_ctx bctx); 
                  error (msg "COMPILER ERROR: Bitstring translation is not supported yet")
 | Ainit a t es t' => error (msg "COMPILER ERROR: Array initialization cannot be treated as expression in C")
+| CallFrame _ _ _ | LoopFrame _ _ _ => error (msg "COMPILER ERROR: Internal runtime frames are not source expressions")
 | Aaccess a t n t' => do al <- get_array_len t;
                       if (n <? Z.to_nat al)%nat 
                       then ret (Evalof (Ederef (Ebinop Cop.Oadd (Evalof (Evar a (transBeePL_type t)) (transBeePL_type t))
@@ -873,11 +904,13 @@ match e with
                             ret (Sreturn (Some (Ederef (hd default_expr (exprlist_list_expr (fst ces))) 
                                      ct)), snd ces, ctx')   
                  | Massgn => do (ces, fn_ctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es ctx bctx);
-                                        let ct := (transBeePL_type t) in
-                                        ret (Sdo (Eassign (Ederef (hd default_expr (exprlist_list_expr (fst ces))) 
-                                                             (typeof (hd default_expr (exprlist_list_expr (fst ces))))) 
-                                                (hd default_expr (tl (exprlist_list_expr (fst ces))))
-                                                ct), snd ces, fn_ctx')
+                     let pointer := hd default_expr (exprlist_list_expr (fst ces)) in
+                     let value := hd default_expr (tl (exprlist_list_expr (fst ces))) in
+                     match typeof pointer with
+                     | Tpointer target _ =>
+                         ret (Sdo (Eassign (Ederef pointer target) value target), snd ces, fn_ctx')
+                     | _ => error (msg "COMPILER ERROR: Assignment requires a reference")
+                     end
                  | Uop o => do (ces, ctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es ctx bctx);
                             let ct := (transBeePL_type t) in 
                             ret (Sreturn (Some (Eunop o 
@@ -904,8 +937,11 @@ match e with
                                         (transBeePL_type t))), snd ces, fn_ctx')
 
                            end
+                 | ArrayRead n =>
+                     do (ce, bctx') <- transBeePL_expr_expr (Prim (ArrayRead n) es t) ctx bctx;
+                     ret (Sreturn (Some (fst ce)), snd ce, bctx')
                  | Cast t' => do (ces, fn_ctx') <- (transBeePL_expr_exprs transBeePL_expr_expr es ctx bctx);
-                              ret (Sreturn (Some (Ecast (hd default_expr (exprlist_list_expr (fst ces))) (transBeePL_type t'))),
+                              ret (Sreturn (Some (trans_cast_expression t' (hd default_expr (exprlist_list_expr (fst ces))))),
                                 snd ces, fn_ctx')
                  end  
 | Bind x t e e' t' => let ct := (transBeePL_type t) in
@@ -1193,6 +1229,7 @@ match e with
                      let ct := (transBeePL_type t) in
                      do ai <- array_init a ct (exprlist_list_expr (fst ces)); 
                      ret (ai, snd ces, bctx')
+| CallFrame _ _ _ | LoopFrame _ _ _ => error (msg "COMPILER ERROR: Internal runtime frames are not source expressions")
 | Aaccess a t n t' => do al <- get_array_len t;
                       if (n <? Z.to_nat al)%nat 
                       then ret (Sreturn (Some (Evalof (Ederef (Ebinop Cop.Oadd (Evalof (Evar a (transBeePL_type t)) (transBeePL_type t))

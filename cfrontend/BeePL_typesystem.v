@@ -3,11 +3,63 @@ Require Import Coq.FSets.FSetProperties Coq.FSets.FMapFacts FMaps FSetAVL Nat Pe
 Require Import Coq.Arith.EqNat Coq.ZArith.Int Integers AST Maps Globalenvs Coqlib Memory. 
 Require Import Csyntax Csem SimplExpr Ctypes Memtype.
 Require Import BeePL_aux BeePL_mem BeeTypes BeePL BeePL_auxlemmas Errors BeePL_values BeePL_notations BeePL_sem.
-Require Import BeePL_helper_functions.
+Require Import BeePL_helper_functions BeePL_packet BeePL_storage_types BeePL_parameter_storage_check.
 From mathcomp Require Import all_ssreflect. 
 
 Local Open Scope error_monad_scope.
 Local Open Scope csyntax_scope.
+
+Definition pattern_context (Gamma : ty_context) (p : pattern) (scrutinee : type) : ty_context :=
+  match p with
+  | Pnone => Gamma
+  | Psome x => match scrutinee with
+               | Ptrtype (Otype pt) => extend_context Gamma x (Ptrtype pt)
+               | _ => Gamma
+               end
+  | Pbytes x t fields =>
+      extends_context (extend_context Gamma x t) (unzip1 fields) (unzip2 fields)
+  end.
+
+Definition valid_match_patterns (scrutinee : type) (ps : list pattern) : Prop :=
+  match scrutinee with
+  | Ptrtype (Otype pt) => exists x,
+      ps = (Pnone :: Psome x :: nil) \/ ps = (Psome x :: Pnone :: nil)
+  | Bytes => exists header schema fields rest,
+      ps = (Pbytes header (Stype schema noattr) fields :: Pbytes rest Bytes nil :: nil)
+  | _ => False
+  end.
+
+(* Packet schemas must be declared structs containing primitive fields.  Field
+   bindings must agree with the declaration, not merely with their annotations. *)
+Lemma packet_member_type_translation : forall members field ty,
+  packet_member_type field members = Some ty ->
+  Ctypes.field_type field (bmembers_cmembers members) = OK (transBeePL_type ty).
+Proof.
+  induction members as [|member rest IH]; intros field ty Hlookup; [discriminate |].
+  destruct member as [name declared | name sz sign a width padding]; [|discriminate].
+  simpl in Hlookup |- *. destruct (ident_eq field name).
+  - inversion Hlookup; subst; reflexivity.
+  - apply IH; exact Hlookup.
+Qed.
+
+Definition packet_schema_valid (cenv : bcomposite_env) (sid : ident)
+    (fields : list (ident * BeeTypes.type)) : Prop :=
+  exists co, PTree.get sid cenv = Some co /\
+    co.(BeeTypes.co_su) = Ctypes.Struct /\
+    List.Forall (fun member => exists name pt,
+      member = BeeTypes.Member_plain name (Vtype pt)) co.(BeeTypes.co_members) /\
+    List.Forall (fun field => exists pt,
+      snd field = Vtype pt /\
+      packet_member_type (fst field) co.(BeeTypes.co_members) = Some (Vtype pt)) fields /\
+    storage_type_check cenv (Stype sid noattr) = true.
+
+Definition valid_match_schemas (cenv : bcomposite_env) (ps : list pattern) : Prop :=
+  List.Forall (fun pat => match pat with
+    | Pbytes _ (Stype sid _) fields => packet_schema_valid cenv sid fields
+    | Pbytes _ Bytes nil => True
+    | Pbytes _ _ _ => False
+    | _ => True
+    end) ps.
 
 Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> effect -> type -> Prop :=
 (*For all value expression, we can assume any effect type, including the empty effect *)
@@ -22,7 +74,20 @@ Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> e
 | ty_valloc : forall cenv Gamma Sigma l ofs t a,
               PTree.get l Sigma = Some (Ptrtype (Reftype t a)) ->
               type_expr cenv Gamma Sigma (Val (Vloc l ofs) (Ptrtype (Reftype t a))) nil (Ptrtype (Reftype t a))
+| ty_valarray : forall cenv Gamma Sigma l base elem len a,
+                object_type_at cenv Sigma l (Ptrofs.unsigned base) (Atype elem len a) ->
+                type_expr cenv Gamma Sigma
+                  (Val (Vloc l base) (Atype elem len a)) nil (Atype elem len a)
+| ty_valstruct : forall cenv Gamma Sigma l ofs id a,
+    object_type_at cenv Sigma l (Ptrofs.unsigned ofs) (Stype id a) ->
+    type_expr cenv Gamma Sigma (Val (Vloc l ofs) (Stype id a)) nil (Stype id a)
+| ty_valbytes : forall cenv Gamma Sigma l ofs,
+    object_type_at cenv Sigma l (Ptrofs.unsigned ofs) Bytes ->
+    type_expr cenv Gamma Sigma (Val (Vloc l ofs) Bytes) nil Bytes
 | ty_valo : forall cenv Gamma Sigma o t,
+            is_option_ptr_type t = false ->
+            (forall v, o = Some v ->
+              type_expr cenv Gamma Sigma (Val v (Ptrtype t)) nil (Ptrtype t)) ->
             type_expr cenv Gamma Sigma (Val (Voption o) (Ptrtype (Otype t))) nil (Ptrtype (Otype t))
 | ty_var : forall cenv Gamma Sigma x t, 
            PTree.get x Gamma = Some t ->
@@ -40,17 +105,17 @@ Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> e
            type_expr cenv Gamma Sigma (App e es rt) (ef ++ efs ++ efs') rt
 | ty_ref : forall cenv Gamma Sigma e ef bt a, 
            type_expr cenv Gamma Sigma e ef (construct_type_btype bt) ->
-           (*type_is_volatile (transBeePL_type (construct_type_btype bt)) = false ->*)
+           type_is_volatile (transBeePL_type (construct_type_btype bt)) = false ->
            type_expr cenv Gamma Sigma (Prim Ref (e::nil) (Ptrtype (Reftype bt a))) (ef ++ (Alloc :: nil)) (Ptrtype (Reftype bt a)) 
 | ty_deref : forall cenv Gamma Sigma e ef pt, (* inner expression should be unrestricted as it will be used later *)
              type_expr cenv Gamma Sigma e ef (Ptrtype pt) -> 
              is_option_ptr_type pt = false ->
-             (*type_is_volatile (transBeePL_type (get_data_type pt)) = false ->*)
+             type_is_volatile (transBeePL_type (get_data_type pt)) = false ->
              type_expr cenv Gamma Sigma (Prim Deref (e::nil) (get_data_type pt)) (ef ++ (Read :: nil)) (get_data_type pt)
 | ty_massgn : forall cenv Gamma Sigma e e' pt ef ef', 
               type_expr cenv Gamma Sigma e ef (Ptrtype pt) ->
               is_option_ptr_type pt = false ->
-              (*type_is_volatile (transBeePL_type (get_data_type pt)) = false ->*)
+              type_is_volatile (transBeePL_type (get_data_type pt)) = false ->
               type_expr cenv Gamma Sigma e' ef' (get_data_type pt) ->
               type_expr cenv Gamma Sigma (Prim Massgn (e::e'::nil) tunit) (ef ++ ef' ++ (Write :: nil)) tunit
 | ty_notbool : forall cenv Gamma Sigma e ef,
@@ -148,11 +213,13 @@ Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> e
             type_expr cenv Gamma Sigma e ef t ->
             type_expr cenv (extend_context Gamma x t) Sigma e' ef' t' ->
             type_expr cenv Gamma Sigma (Bind x t e e' t') (ef ++ ef') t'
-| ty_cond : forall cenv Gamma Sigma e1 e2 e3 t ef1 ef2, 
+| ty_cond : forall cenv Gamma Sigma e1 e2 e3 t ef1 ef2 ef3 branch_effect,
             type_expr cenv Gamma Sigma e1 ef1 (Vtype Tbool) ->
             type_expr cenv Gamma Sigma e2 ef2 t ->
-            type_expr cenv Gamma Sigma e3 ef2 t ->
-            type_expr cenv Gamma Sigma (Cond e1 e2 e3 t) (ef1 ++ ef2) t
+            type_expr cenv Gamma Sigma e3 ef3 t ->
+            sub_effect ef2 branch_effect = true ->
+            sub_effect ef3 branch_effect = true ->
+            type_expr cenv Gamma Sigma (Cond e1 e2 e3 t) (ef1 ++ branch_effect) t
 | ty_unit : forall cenv Gamma Sigma,
             type_expr cenv Gamma Sigma (Unit tunit) nil tunit
 | ty_addr : forall cenv Gamma Sigma l ofs t a,
@@ -167,27 +234,31 @@ Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> e
            ts = get_at_eapp exf ->
            type_exprs Gamma Sigma es ef ts ->
            type_expr Gamma Sigma (Eapp exf ts es rt) ((get_ef_eapp exf) ++ ef) rt *)
-| ty_sinit : forall cenv Gamma Sigma x es efs id a a' co ids cts bts, 
+| ty_sinit : forall cenv Gamma Sigma x es efs id a co ids bts t,
+             x = id ->
+             structure_result_type id a t ->
              type_exprs cenv Gamma Sigma es efs bts ->
              PTree.get id cenv = Some co ->
-             type_of_members (combine (map Ctypes.attr_of_type (transBeePL_types transBeePL_type bts)) ids) 
-                             (bmembers_cmembers co.(co_members)) = OK cts ->
-             trans_ctypes_btypes trans_ctype_btype cts = OK bts ->
-             type_expr cenv Gamma Sigma (Sinit x ids es (Ptrtype (Reftype (Bstruct id a) a'))) efs (Ptrtype (Reftype (Bstruct id a) a'))
+             ids = map Ctypes.name_member
+               (bmembers_cmembers (filter (fun m => negb (member_is_padding m)) co.(co_members))) ->
+             length ids = length bts ->
+             source_member_types ids co.(co_members) = OK bts ->
+             storage_type_check cenv (Stype id a) = true ->
+             type_expr cenv Gamma Sigma (Sinit x ids es t) efs t
 | ty_sfield : forall cenv Gamma Sigma e x id a te ef co ct bt,
               type_expr cenv Gamma Sigma e ef te ->
-              (eq_type te (Stype id a)) \/ (eq_type te (Ptrtype (Reftype (Bstruct id a) noattr))) 
-              \/ (eq_type te (Ptrtype (Otype (Reftype (Bstruct id a) noattr)))) ->
+              (eq_type te (Stype id a)) \/ (eq_type te (Ptrtype (Reftype (Bstruct id a) noattr))) ->
               PTree.get id cenv = Some co ->
               Ctyping.type_of_member a x (bmembers_cmembers co.(co_members)) = OK ct ->
-              trans_ctype_btype ct = OK bt ->
+              source_member_type x co.(co_members) = OK bt ->
               type_expr cenv Gamma Sigma (Sfield e x bt) ef bt
 | ty_for : forall cenv Gamma Sigma e1 e2 d e ef1 t1 ef2 t2 fv1 fv2 fv ef t,
            type_expr cenv Gamma Sigma e1 ef1 t1 ->
            type_expr cenv Gamma Sigma e2 ef2 t2 ->
            type_expr cenv Gamma Sigma e ef t -> 
            eq_type t1 t2 ->
-           is_primint t || is_primlong t ->
+           is_primint t1 || is_primlong t1 ->
+           t = Utype ->
            free_variables e1 = fv1 ->
            free_variables e2 = fv2 ->
            free_variables e = fv ->
@@ -195,31 +266,56 @@ Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> e
            disjoint_vars fv fv2 ->
            type_expr cenv Gamma Sigma (For e1 e2 d e t) (ef1 ++ ef2 ++ ef) t
 | ty_none : forall cenv Gamma Sigma t,
-            is_option_ptr_type t ->
-            type_expr cenv Gamma Sigma (Enone (Ptrtype t)) nil (Ptrtype t)
+            is_option_ptr_type t = false ->
+            type_expr cenv Gamma Sigma (Enone (Ptrtype (Otype t))) nil (Ptrtype (Otype t))
 | ty_some : forall cenv Gamma Sigma t e te ef,
             type_expr cenv Gamma Sigma e ef te ->
-            is_option_ptr_type t ->
-            te = get_data_type t ->
-            type_expr cenv Gamma Sigma (Esome e (Ptrtype t)) ef (Ptrtype t)
-| ty_matcho : forall cenv Gamma Sigma e ef te ps es efs ts fvs,
-              get_patterns_var ps = fvs ->
+            is_option_ptr_type t = false ->
+            te = Ptrtype t ->
+            type_expr cenv Gamma Sigma (Esome e (Ptrtype (Otype t))) ef (Ptrtype (Otype t))
+| ty_matcho : forall cenv Gamma Sigma e ef te ps es efb rt branch_effect,
               type_expr cenv Gamma Sigma e ef te ->
-              type_exprs cenv (extends_context Gamma fvs (construct_list_type (hd tunit ts) (length fvs))) Sigma es efs ts ->
-              is_option_type te \/ is_bytes te ->
-              all_eq_types ts ->
-              type_expr cenv Gamma Sigma (Match e ps es (hd tunit ts)) (ef ++ efs) (hd tunit ts)
+              valid_match_patterns te ps ->
+              forall (Hschemas : valid_match_schemas cenv ps),
+              length ps = length es ->
+              (forall n pat branch,
+                List.nth_error ps n = Some pat ->
+                List.nth_error es n = Some branch ->
+                type_expr cenv (pattern_context Gamma pat te) Sigma branch (branch_effect n) rt) ->
+              (forall n, (n < length es)%nat -> sub_effect (branch_effect n) efb = true) ->
+              type_expr cenv Gamma Sigma (Match e ps es rt) (ef ++ efb) rt
 | ty_ainit : forall cenv Gamma Sigma a t es t' aty efs ts,
              type_exprs cenv Gamma Sigma es efs ts -> 
              get_array_elm_ty t = OK aty -> 
              is_atype t && is_atype t' ->
+             t = t' ->
+             (exists attr, t = Atype aty (Z.of_nat (List.length ts)) attr) ->
              all_eq_type aty ts ->
+             storage_type_check cenv t = true ->
              type_expr cenv Gamma Sigma (Ainit a t es t') efs t' (* Should we also include write effects for array initialization? *)
-| ty_aaccess : forall cenv Gamma Sigma a t n t' aty, 
+| ty_arrayread : forall cenv Gamma Sigma e ef elem len a n,
+               type_expr cenv Gamma Sigma e ef (Atype elem len a) ->
+               PeanoNat.Nat.lt n (Z.to_nat len) ->
+               is_funtype elem = false ->
+               type_expr cenv Gamma Sigma (Prim (ArrayRead n) (e :: nil) elem) ef elem
+| ty_aaccess : forall cenv Gamma Sigma a t n t' aty,
+               Gamma ! a = Some t ->
                get_array_elm_ty t = OK aty ->
                is_atype t ->
-               eq_type aty t' ->
+               aty = t' ->
+               (exists len attr, t = Atype aty len attr /\ PeanoNat.Nat.lt n (Z.to_nat len)) ->
+               is_funtype aty = false ->
                type_expr cenv Gamma Sigma (Aaccess a t n t') nil t'
+| ty_callframe : forall cenv Gamma callee_Gamma Sigma callee body ef t,
+               type_expr cenv callee_Gamma Sigma body ef t ->
+               type_expr cenv Gamma Sigma (CallFrame callee body t) ef t
+(* Function-value typing records shape only. Callable address/signature/body
+   validity is checked by the separate runtime code-location invariant, never
+   by pretending code is an allocated data cell in Sigma. *)
+| ty_valfun : forall cenv Gamma Sigma b args effects result variadic,
+    type_expr cenv Gamma Sigma
+      (Val (Vloc b Ptrofs.zero) (Ftype args effects result variadic)) nil
+      (Ftype args effects result variadic)
 (*| ty_subt : forall cenv Gamma Sigma e ef t ef', 
             type_expr cenv Gamma Sigma e ef t ->
             sub_effect ef ef' ->
@@ -230,6 +326,21 @@ Inductive type_expr : bcomposite_env -> ty_context -> store_context -> expr -> e
              type_expr Gamma Sigma e ef (Reftype h (Bprim t) a) ->
              type_expr Gamma Sigma (Hexpr m e (Reftype h (Bprim t) a)) ef (Reftype h (Bprim t) a)*)
 (* fix me : Add typing rule for external function *)
+| ty_loopframe : forall cenv Gamma Sigma remaining template active budget active_effect,
+    type_expr cenv Gamma Sigma template budget Utype ->
+    type_expr cenv Gamma Sigma active active_effect Utype ->
+    sub_effect active_effect budget = true ->
+    type_expr cenv Gamma Sigma (LoopFrame remaining template active) budget Utype
+
+| ty_constbool : forall cenv Gamma Sigma b,
+    type_expr cenv Gamma Sigma (Const (ConsBool b) (Vtype Tbool)) nil (Vtype Tbool)
+
+| ty_cast : forall cenv Gamma Sigma e ef source target,
+    type_expr cenv Gamma Sigma e ef (Vtype source) ->
+    allowed_cast source target = OK target ->
+    type_expr cenv Gamma Sigma
+      (Prim (Cast (Vtype target)) (e :: nil) (Vtype target)) ef (Vtype target)
+
 with type_exprs : bcomposite_env -> ty_context -> store_context -> list expr -> effect -> list type -> Prop :=
 | ty_nil : forall cenv Gamma Sigma,
            type_exprs cenv Gamma Sigma nil nil nil
@@ -242,10 +353,25 @@ Scheme type_expr_ind_mut := Induction for type_expr Sort Prop
   with type_exprs_ind_mut := Induction for type_exprs Sort Prop.
 Combined Scheme type_exprs_type_expr_ind_mut from type_exprs_ind_mut, type_expr_ind_mut.
 
+(* Compatibility for freshly allocated/root arrays. The size premise is
+   explicit because arbitrary composite environments need not have valid sizes. *)
+Lemma ty_valarray_root : forall cenv Gamma Sigma b elem len attr,
+  PTree.get b Sigma = Some (Atype elem len attr) ->
+  (0 <= sizeof_type cenv (Atype elem len attr))%Z ->
+  type_expr cenv Gamma Sigma (Val (Vloc b Ptrofs.zero) (Atype elem len attr)) nil
+    (Atype elem len attr).
+Proof.
+  intros cenv Gamma Sigma b elem len attr Hget Hsize.
+  apply ty_valarray. rewrite Ptrofs.unsigned_zero.
+  exact (@object_type_root cenv Sigma b (Atype elem len attr) Hget Hsize).
+Qed.
+
 (**** Type system for whole program ***)
 Inductive type_function : bcomposite_env -> ty_context -> store_context -> BeePL.function -> Prop :=
 | ty_function : forall fn cenv Gamma Sigma ef tb Gamma',
-                bind_vars (bind_vars Gamma fn.(fn_args)) fn.(fn_vars) = Gamma' -> 
+                bind_vars Gamma fn.(fn_args) = Gamma' ->
+                list_norepet (unzip1 fn.(fn_args)) ->
+                parameters_storage_check cenv fn.(fn_args) = true ->
                 type_expr cenv Gamma' Sigma fn.(fn_body) ef tb ->
                 tb = fn.(fn_return) ->
                 is_ptrtype tb = false ->
@@ -386,14 +512,7 @@ Lemma value_typing : forall cenv Gamma Sigma ef t v,
 type_expr cenv Gamma Sigma (Val v t) ef t ->
 type_expr cenv Gamma Sigma (Val v t) nil t. 
 Proof.
-move=> cenv Gamma Sigma ef t v. move eq : (Val v t)=> v' ht.
-elim: ht eq=> //=.
-+ move=> cenv' Gamma' Sigma' [] h1; subst. by apply ty_valu.
-+ move=> cenv' Gamma' Sigma' b [] h1; subst. by apply ty_valb.
-+ move=> cenv' Gamma' Sigma' i sz s a [] h1; subst. by apply ty_vali.
-+ move=> cenv' Gamma' Sigma' i s a [] h1; subst. by apply ty_vall.
-+ move=> cenv' Gamma' Sigma' l ofs bt a hs [] h1; subst. by apply ty_valloc. 
-move=> cenv' Gamma' Sigma' o t' [] h1; subst. by apply ty_valo.
+  intros cenv Gamma Sigma ef t v H. inversion H; subst; econstructor; eauto.
 Qed.
 
 Lemma type_infer_vunit: forall cenv Gamma Sigma ef t t', 
@@ -409,9 +528,7 @@ Lemma type_infer_option: forall cenv Gamma Sigma ef o t t',
 type_expr cenv Gamma Sigma (Val (Voption o) t) ef t' ->
 exists pt, t = (Ptrtype (Otype pt)) /\ t' = (Ptrtype (Otype pt)).
 Proof.
-move=> cenv Gamma Sigma ef o t t'.
-move eq: (Val (Voption o) t)=> v ht. elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' o' pt' [] h1 h2; subst. by exists pt'.
+  intros cenv Gamma Sigma ef o t t' H. inversion H; subst; eauto.
 Qed.
 
 Lemma type_infer_vbool: forall cenv Gamma Sigma ef b t t', 
@@ -445,14 +562,13 @@ Qed.
 
 Lemma type_infer_loc: forall cenv Gamma Sigma l ofs ef t t', 
 type_expr cenv Gamma Sigma (Val (Vloc l ofs) t) ef t' ->
+(is_atype t' || is_stype t' || is_bytes t' || is_funtype t') = false ->
 (exists bt a, t = Ptrtype (Reftype bt a) /\ 
                 t' = Ptrtype (Reftype bt a) /\ 
                 PTree.get l Sigma = Some (Ptrtype (Reftype bt a))).
 Proof.
-move=> cenv Gamma Sigma l ofs ef t t'. 
-move eq : (Val (Vloc l ofs) t)=> v ht. elim: ht eq=>//=.
-move=> cenv' Gamma' Sigma' l' ofs' bt' a' hs [] h1 h2 h3; subst. 
-by exists bt', a'.
+  intros cenv Gamma Sigma l ofs ef t t' Htyped Hnotarray.
+  inversion Htyped; subst; try discriminate. repeat eexists; eauto.
 Qed.
 
 Lemma type_infer_var : forall cenv Gamma Sigma x t ef t',
@@ -513,7 +629,7 @@ Proof.
 move=> cenv Gamma Sigma e ef t t'.
 move eq: (Prim Ref [:: e] t)=> rv ht.
 elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e' ef' bt' a' ht hin [] h1 h2; subst.
+move=> cenv' Gamma' Sigma' e' ef' bt' a' ht hin hnonvolatile [] h1 h2; subst.
 by exists bt', a'; split=> //=.
 Qed.
 
@@ -526,7 +642,7 @@ Proof.
 move=> cenv Gamma Sigma e ef t t'.
 move eq: (Prim Deref [:: e] t)=> rv ht.
 elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e' ef' pt ht1 hin1 h1 [] h2 h3; subst.
+move=> cenv' Gamma' Sigma' e' ef' pt ht1 hin1 h1 hnonvolatile [] h2 h3; subst.
 by exists pt, ef'; split=>//=. 
 Qed.
 
@@ -540,7 +656,7 @@ Proof.
 move=> cenv Gamma Sigma e e' ef t t'.
 move eq: (Prim Massgn [:: e; e'] t)=> rv ht.
 elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e1 e2 pt ef1 ef2 ht hin ho ht' hin' [] h1 h2 h3; subst; split=> //=.
+move=> cenv' Gamma' Sigma' e1 e2 pt ef1 ef2 ht hin ho hnonvolatile ht' hin' [] h1 h2 h3; subst; split=> //=.
 split=> //=. by exists pt, ef1, ef2.
 Qed.
 
@@ -804,17 +920,13 @@ Qed.
 Lemma type_infer_cond: forall cenv Gamma Sigma e1 e2 e3 t ef' t',
 type_expr cenv Gamma Sigma (Cond e1 e2 e3 t) ef' t' ->
 t' = t /\
-exists ef1 ef2, type_expr cenv Gamma Sigma e1 ef1 (Vtype Tbool) /\
-                type_expr cenv Gamma Sigma e2 ef2 t /\
-                type_expr cenv Gamma Sigma e3 ef2 t.
-Proof.
-move=> cenv Gamma Sigma e1 e2 e3 t ef' t'.
-move eq: (Cond e1 e2 e3 t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e1' e2' e3' t1 ef1 ef2 ht1 hin1
-       ht2 hin2 ht3 hin3 [] h1 h2 h3 h4; subst; split=> //=.
-by exists ef1, ef2.
-Qed.
+exists ef1 ef2 ef3 branch_effect,
+  ef' = ef1 ++ branch_effect /\
+  type_expr cenv Gamma Sigma e1 ef1 (Vtype Tbool) /\
+  type_expr cenv Gamma Sigma e2 ef2 t /\
+  type_expr cenv Gamma Sigma e3 ef3 t /\
+  sub_effect ef2 branch_effect = true /\ sub_effect ef3 branch_effect = true.
+Proof. intros; inversion H; subst; eauto 12. Qed.
 
 Lemma type_infer_unit: forall cenv Gamma Sigma ef t t',
 type_expr cenv Gamma Sigma (Unit t) ef t' ->
@@ -838,34 +950,30 @@ by exists bt', a'.
 Qed.
 
 Lemma type_infer_sinit : forall cenv Gamma Sigma x ids es t efs t',
-type_expr cenv Gamma Sigma (Sinit x ids es t) efs t' ->
-exists id a a' efs bts co cts, 
-t = (Ptrtype (Reftype (Bstruct id a) a')) /\ t' = (Ptrtype (Reftype (Bstruct id a) a')) /\
-type_exprs cenv Gamma Sigma es efs bts /\ PTree.get id cenv = Some co /\ 
-type_of_members (combine (map Ctypes.attr_of_type (transBeePL_types transBeePL_type bts)) ids) 
-(bmembers_cmembers co.(co_members)) = OK cts /\ trans_ctypes_btypes trans_ctype_btype cts = OK bts.
+  type_expr cenv Gamma Sigma (Sinit x ids es t) efs t' ->
+  t' = t /\ exists a bts co,
+    structure_result_type x a t /\
+    type_exprs cenv Gamma Sigma es efs bts /\ PTree.get x cenv = Some co /\
+    ids = map Ctypes.name_member
+      (bmembers_cmembers (filter (fun m => negb (member_is_padding m)) co.(co_members))) /\
+    length ids = length bts /\ source_member_types ids co.(co_members) = OK bts.
 Proof.
-move=> cenv Gamma Sigma x ids es t efs t'.
-move eq: (Sinit x ids es t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' x' es' efs' id a a' co ids' cts bts htes hc htm ht [] h1 h2 h3 h4; subst. 
-by exists id, a, a', efs', bts, co, cts; split=> //=.
+  intros cenv Gamma Sigma x ids es t efs t' Htyped.
+  inversion Htyped; subst. split; [reflexivity |]. repeat eexists; eauto.
 Qed.
 
 Lemma type_infer_sfield : forall cenv Gamma Sigma e x t ef t',
-type_expr cenv Gamma Sigma (Sfield e x t) ef t' ->
-exists id a co ct ef te, 
-t = (Stype id a) /\ t' = (Ptrtype (Reftype (Bstruct id a) noattr)) /\
-type_expr cenv Gamma Sigma e ef te ->
-PTree.get id cenv = Some co /\ 
-Ctyping.type_of_member a x (bmembers_cmembers co.(co_members)) = OK ct /\
-trans_ctype_btype ct = OK t.            
+  type_expr cenv Gamma Sigma (Sfield e x t) ef t' ->
+  t = t' /\ exists id a co ct te,
+    type_expr cenv Gamma Sigma e ef te /\
+    (is_true (eq_type te (Stype id a)) \/
+     is_true (eq_type te (Ptrtype (Reftype (Bstruct id a) noattr)))) /\
+    PTree.get id cenv = Some co /\
+    Ctyping.type_of_member a x (bmembers_cmembers co.(co_members)) = OK ct /\
+    source_member_type x co.(co_members) = OK t'.
 Proof.
-move=> cenv Gamma Sigma e x t ef t'.
-move eq: (Sfield e x t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e' x' id' a te ef' co ct bt ht hi hi' ho hct ht' [] h1 h2 h3; subst.
-by exists id', a, co, ct, ef', te; split=> //=.
+  intros cenv Gamma Sigma e x t ef t' Htyped. inversion Htyped; subst.
+  split; [reflexivity |]. do 5 eexists. repeat split; eauto.
 Qed.
 
 Lemma type_infer_for : forall cenv Gamma Sigma e1 e2 d e t ef t', 
@@ -873,28 +981,27 @@ type_expr cenv Gamma Sigma (For e1 e2 d e t) ef t' ->
 exists te t1 t2 ef1 ef2 efe fv1 fv2 fv, 
 type_expr cenv Gamma Sigma e1 ef1 t1 /\ type_expr cenv Gamma Sigma e2 ef2 t2 /\
 type_expr cenv Gamma Sigma e efe te /\ t = te /\ t' = te /\
-(is_primint t || is_primlong t) /\ (is_primint t' || is_primlong t') /\
+(is_primint t1 || is_primlong t1) /\ eq_type t1 t2 /\ t = Utype /\
 free_variables e1 = fv1 /\ free_variables e2 = fv2 /\ free_variables e = fv /\
 disjoint_vars fv fv1 /\ disjoint_vars fv fv2.
 Proof.
-move=> cenv Gamma Sigma e1 e2 d e t ef t'.
-move eq: (For e1 e2 d e t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e1' e2' d' e' ef1 t1 ef2 t2 fv1 fv2 fv ef' t'' ht1 hin ht2 hin'.
-move=> ht3 hin1 heq heq' hf hf' hf1 hd1 hd2 [] h1 h2 h3 h4 h5; subst.
-by exists t'', t1, t2, ef1, ef2, ef', (free_variables e1'), (free_variables e2'), (free_variables e').
+  intros cenv Gamma Sigma e1 e2 d e t ef t' Htyped. inversion Htyped; subst.
+  match goal with
+  | Hl : type_expr _ _ _ e1 ?le ?lt,
+    Hr : type_expr _ _ _ e2 ?re ?rt,
+    Hb : type_expr _ _ _ e ?be Utype |- _ =>
+    exists Utype, lt, rt, le, re, be,
+      (free_variables e1), (free_variables e2), (free_variables e);
+    repeat split; assumption || reflexivity
+  end.
 Qed.
-
 
 Lemma type_infer_none : forall cenv Gamma Sigma t ef t',
 type_expr cenv Gamma Sigma (Enone t) ef t' ->
 exists t1, t = (Ptrtype t1) /\ t' = (Ptrtype t1) /\ is_option_ptr_type t1.
 Proof.
-move=> cenv Gamma Sigma t ef t'.
-move eq: (Enone t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' pt ho [] h1; subst.
-by exists pt.
+  intros cenv Gamma Sigma t ef t' Htyped. inversion Htyped; subst.
+  eexists. repeat split; reflexivity.
 Qed.
 
 Lemma type_infer_some : forall cenv Gamma Sigma t e ef t',
@@ -902,38 +1009,35 @@ type_expr cenv Gamma Sigma (Esome e t) ef t' ->
 exists t1 ef' te, t = (Ptrtype t1) /\ t' = (Ptrtype t1) /\ is_option_ptr_type t1 /\
 type_expr cenv Gamma Sigma e ef' te.
 Proof.
-move=> cenv Gamma Sigma t e ef t'.
-move eq: (Esome e t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' pt e' te ef' hte hi ho h1 [] h2 h3; subst.
-by exists pt, ef', (get_data_type pt).
+  intros cenv Gamma Sigma t e ef t' Htyped. inversion Htyped; subst.
+  do 3 eexists. repeat split; eauto; reflexivity.
 Qed.
 
 Lemma type_infer_match : forall cenv Gamma Sigma t e ef ps es t',
 type_expr cenv Gamma Sigma (Match e ps es t) ef t' ->
-exists fvs efe te efs ts, t = (hd tunit ts) /\ t' = (hd tunit ts) /\
-get_patterns_var ps = fvs /\ type_expr cenv Gamma Sigma e efe te /\ all_eq_types ts /\
-type_exprs cenv (extends_context Gamma fvs (construct_list_type (hd tunit ts) (length fvs))) Sigma es efs ts.
+t = t' /\ exists efe te efb branch_effect,
+  ef = efe ++ efb /\ type_expr cenv Gamma Sigma e efe te /\
+  valid_match_patterns te ps /\ length ps = length es /\
+  (forall n pat branch, List.nth_error ps n = Some pat ->
+    List.nth_error es n = Some branch ->
+    type_expr cenv (pattern_context Gamma pat te) Sigma branch (branch_effect n) t') /\
+  (forall n, (n < length es)%nat -> sub_effect (branch_effect n) efb = true).
 Proof.
-move=> cenv Gamma Sigma t e ef ps es t'.
-move eq: (Match e ps es t)=> rv ht.
-elim: ht eq=> //=.
-move=> cenv' Gamma' Sigma' e' ef' te ps' es' efs ts fvs hg hte hi hts ho hall [] h1 h2 h3 h4; subst.
-by exists (get_patterns_var ps'), ef', te, efs, ts.
+  intros cenv Gamma Sigma t e ef ps es t' H.
+  inversion H; subst. split; [reflexivity |].
+  do 4 eexists. repeat split; eauto.
 Qed.
+
+Lemma type_infer_match_schemas : forall cenv Gamma Sigma e ps es rt ef result,
+  type_expr cenv Gamma Sigma (Match e ps es rt) ef result ->
+  valid_match_schemas cenv ps.
+Proof. intros; inversion H; assumption. Qed.
 
 Lemma type_val_reflx : forall cenv Gamma Sigma v t ef t',
 type_expr cenv Gamma Sigma (Val v t) ef t' -> 
 t = t'.
 Proof.
-move=> cenv Gamma Sigma v t ef t'. move eq: (Val v t)=> rv ht. 
-elim: ht eq=> //=.  
-+ by move=> cenv' Gamma' Sigma' [] h; subst.
-+ by move=> cenv' Gamma' Sigma' b [] h h'; subst.
-+ by move=> cenv' Gamma' Sigma' i sz s a [] h h'; subst.
-+ by move=> cenv' Gamma' Sigma' i s a [] h h'; subst.
-+ by move=> cenv' Gamma' Sigma' l ofs t'' a hs [] h1 h2; subst.
-by move=> cenv' Gamma' Sigma' o pt [] h1 h2.
+  intros cenv Gamma Sigma v t ef t' H. inversion H; reflexivity.
 Qed.
 
 Lemma type_expr_exprs_deterministic: 
@@ -1026,12 +1130,13 @@ Proof.
 by move=> cenv Gamma Sigma e ef t ht; elim: ht=> //=.
 Qed.
 
-(* Complete me : easy *)
 Lemma type_rel_typeof_val : forall cenv Gamma Sigma v ef t t',
 type_expr cenv Gamma Sigma (Val v t) ef t' ->
 typeof_value v t.
 Proof.
-Admitted.
+  intros cenv Gamma Sigma v ef t t' Htyped.
+  inversion Htyped; subst; (exact I || reflexivity).
+Qed.
 
 Lemma eq_type_rel : forall v t t',
 eq_type t t' ->
@@ -1061,11 +1166,17 @@ apply type_exprs_type_expr_ind_mut=> //=.
 Admitted.
 
 (* Compelete Me: Easy *)
-Lemma typed_well_formed_value : forall cenv Gamma Sigma v t ef, 
+Lemma typed_well_formed_value : forall cenv Gamma Sigma v t ef,
 type_expr cenv Gamma Sigma (Val v t) ef t ->
 well_formed_value v t.
 Proof.
-Admitted.
+  intros cenv Gamma Sigma v t ef Htyped.
+  remember (Val v t) as expression eqn:Hvalue.
+  revert v Hvalue.
+  induction Htyped; intros value Hvalue; inversion Hvalue; subst;
+    eauto using wf_vunit, wf_vbool, wf_vint, wf_vlong, wf_vloc,
+      wf_varray, wf_vstruct, wf_vbytes, wf_vfun, wf_voption.
+Qed.
 
 Lemma get_type_fundef : forall cenv Gamma Sigma (bge: BeePL.genv) fd l o ef te ts efs rt v,
 type_expr cenv Gamma Sigma (Val (Vloc l o) te) ef te -> 

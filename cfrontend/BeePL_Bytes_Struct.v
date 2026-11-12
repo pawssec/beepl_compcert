@@ -46,8 +46,6 @@ Definition unique_bytes_types (l : list type) : list type :=
 (* ---------------------------------------------------------------------- *)
 
 (* Identifiers reserved for bytes *)
-Definition bytes_start : ident := $"bytes_start".
-Definition bytes_end   : ident := $"bytes_end".
 
 Definition ident_to_string_bytes : list (ident * string) :=
   ( (bytes_t,     "bytes_t")
@@ -58,11 +56,7 @@ Fixpoint get_bcs_from_types (ots : list type) : list composite_definition :=
   match ots with
   | nil => nil
   | Bytes :: bts_tail =>
-      let nbc :=
-        Composite bytes_t Struct
-          ( Ctypes.Member_plain bytes_start (tptr tuchar)
-          :: Ctypes.Member_plain bytes_end   (tptr tuchar)
-          :: nil) noattr in
+      let nbc := bcomposite_ccomposite_definition bytes_bcomposite_definition in
       let nbc' := get_bcs_from_types bts_tail in
       nbc :: nbc'
   | _ :: bts_tail =>
@@ -141,7 +135,11 @@ Fixpoint get_bcs_from_globdefs_aux
 Definition get_bcs_from_globdefs
            (gd : list (BeePL.globdef BeePL.fundef BeeTypes.type))
   : list composite_definition :=
-  remove_duplicate_composites (get_bcs_from_globdefs_aux gd).
+  (* Match the source environment even if Bytes appears only in composite
+     fields or parameters, rather than in a local-variable declaration. *)
+  remove_duplicate_composites
+    (bcomposite_ccomposite_definition bytes_bcomposite_definition ::
+     get_bcs_from_globdefs_aux gd).
 
 
 

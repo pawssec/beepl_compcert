@@ -80,6 +80,17 @@ let build_efenv () : efenv =
           effects = [Write; Io];
           ret = Vtype Tlong;
           variadic = false }
+  |> Env.add "bpf_skb_load_bytes"
+        { formals = [Ptr (Reftype (Bstruct "__sk_buff")); Vtype Tuint32;
+                     Ptr (Reftype (Bprim Tuint32)); Vtype Tuint32];
+          effects = [Read; Write; Io]; ret = Vtype Tlong; variadic = false }
+  |> Env.add "bpf_skb_store_bytes"
+        { formals = [Ptr (Reftype (Bstruct "__sk_buff")); Vtype Tuint32;
+                     Ptr (Reftype (Bprim Tuint32)); Vtype Tuint32; Vtype Tulong];
+          effects = [Read; Write; Io]; ret = Vtype Tlong; variadic = false }
+  |> Env.add "bpf_redirect"
+        { formals = [Vtype Tuint32; Vtype Tulong];
+          effects = [Io]; ret = Vtype Tlong; variadic = false }
   |> Env.add "bpf_get_current_pid_tgid"
         { formals = [];
           effects = [Io];
@@ -339,6 +350,20 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
     | _ -> raise (TypeError "Massgn expects exactly two arguments")
     end
   | App (e1, args) ->
+    let literal n = function
+      | Prim (Cast _, [Const (Cint32 x)]) -> x = Int32.of_int n
+      | _ -> false in
+    (match e1, args with
+     | Var ("bpf_skb_load_bytes" | "bpf_skb_store_bytes"), _ :: _ :: _ :: len :: _ ->
+         if not (literal 4 len) then
+           raise (TypeError "Packet helper length must be literal (uint32)4 for a uint32 buffer")
+     | _ -> ());
+    (match e1, args with
+     | Var "bpf_skb_store_bytes", [_; _; _; _; flags]
+     | Var "bpf_redirect", [_; flags] ->
+         if not (literal 0 flags) then
+           raise (TypeError "Packet helper flags must be literal (ulong)0")
+     | _ -> ());
     let ty1      = infer_expr ee senv env e1 in
     let arg_tys  = List.map (infer_expr ee senv env) args in
     begin match ty1 with
@@ -445,7 +470,9 @@ let rec infer_expr (ee : efenv) (senv : Senv.t) (env : tyenv) (e : expr) : typ =
         | Vtype Tuint8 | Vtype Tuint16 | Vtype Tuint32
         | Vtype Tlong | Vtype Tulong -> true
         | _ -> false)
-      then t3
+      then
+        if typ_eq t3 Utype then Utype
+        else raise (TypeError "For loop body must have unit type")
       else raise (TypeError "For loop bounds must be matching integer/long types")
   | Sinit (struct_name, fields, exprs) ->
         let decl = Senv.find struct_name senv in
@@ -690,7 +717,7 @@ let check_ebpf_calls prog =
     in
     List.iter (fun (name, _) -> visit [] name) graph;
     let rec uses_tc_helper name =
-      name = "bpf_skb_change_type" ||
+      List.mem name ["bpf_skb_change_type"; "bpf_skb_load_bytes"; "bpf_skb_store_bytes"; "bpf_redirect"] ||
       match List.assoc_opt name graph with
       | None -> false
       | Some children -> List.exists uses_tc_helper children
@@ -706,7 +733,7 @@ let check_ebpf_calls prog =
     List.iter (function
       | EBPFInternal (Tfundecl (name, _, _, _, _, _), section)
         when not (tc_section section) && uses_tc_helper name ->
-          raise (TypeError "bpf_skb_change_type currently requires a tc entry point")
+          raise (TypeError "bpf_skb_change_type currently requires a tc entry point; packet load/store/redirect helpers also require tc")
       | _ -> ()) prog
   end
 

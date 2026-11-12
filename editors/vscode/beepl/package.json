@@ -1,0 +1,56 @@
+{
+  "name": "beepl-language",
+  "displayName": "BeePL Language",
+  "description": "Syntax highlighting and snippets for BeePL eBPF programs.",
+  "version": "0.1.0",
+  "publisher": "beepl",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pawssec/beepl_compcert.git"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "beepl",
+        "aliases": [
+          "BeePL",
+          "beepl"
+        ],
+        "extensions": [
+          ".bpl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "beepl",
+        "scopeName": "source.beepl",
+        "path": "./syntaxes/beepl.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "beepl",
+        "path": "./snippets/beepl.json"
+      }
+    ]
+  },
+  "devDependencies": {
+    "vscode-textmate": "9.3.2",
+    "vscode-oniguruma": "1.7.0"
+  }
+}

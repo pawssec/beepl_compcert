@@ -978,5 +978,8 @@ let export_parse_file (filename : string) : program =
 
 let export_parse_and_transform_bpl (filename : string) : string =
   let program = export_parse_file filename in
+  Beepl_ast_typechecker.infer_program program;
+  let program = Beepl_nested_options.lower_program program in
+  Beepl_ast_typechecker.infer_program program;
   export_transform_program program
 

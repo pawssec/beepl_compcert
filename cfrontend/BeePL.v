@@ -20,7 +20,8 @@ Inductive builtin : Type :=
                                                assigns the evaluation of e to the reference cell l *)
 | Uop : Cop.unary_operation -> builtin      (* unary operator *) (* rvalue *)
 | Bop : Cop.binary_operation -> builtin     (* binary operator *) (* rvalue *)
-| Cast : type -> builtin                     (* casting operator *).
+| Cast : type -> builtin                     (* casting operator *)
+| ArrayRead : nat -> builtin.                (* internal indexed read of an array expression *)
 (*| Run : Memory.mem -> builtin               (* eliminate heap effect : [r1-> v1, ..., ern->vn] e 
                                                reduces to e captures the essence of state isolation 
                                                and reduces to a value discarding the heap *).*)
@@ -98,6 +99,8 @@ end.
 
 (* The source language never exposes the heap binding construct hpφ.e directly to the user 
    but during evaluation the reductions on heap operations create heaps and use them. *)
+Definition vmap := PTree.t (positive * type). (* map variable -> location & type *)
+
 Inductive expr : Type :=
 | Val : value -> type -> expr                                           (* value *) (* rvalue *)
 | Var : ident -> type -> expr                                           (* variable *) (* lvalue *)
@@ -117,7 +120,9 @@ Inductive expr : Type :=
 | Match : expr -> list pattern -> list expr -> type -> expr             (* pattern matching *)
 | Ebytes : list expr -> type -> expr                                    (* bitstrings *)
 | Ainit : ident -> type -> list expr -> type -> expr                    (* array initialization *)
-| Aaccess : ident -> type -> nat -> type -> expr.                       (* array access *)
+| Aaccess : ident -> type -> nat -> type -> expr                        (* array access *)
+| CallFrame : vmap -> expr -> type -> expr
+| LoopFrame : nat -> expr -> expr -> expr.                            (* internal call scope *)
 
 (*int x = 2; {
 int x = 3;
@@ -158,7 +163,9 @@ Context
   (Hmatch : forall t ps e, P e -> forall es, (forall e, List.In e es -> P e) -> P (Match e ps es t))
   (Hbytes : forall t es, (forall e, List.In e es -> P e) -> P (Ebytes es t))
   (Hainit : forall a t t' es, (forall e, List.In e es -> P e) -> P (Ainit a t es t'))
-  (Haccess : forall a t n t', P (Aaccess a t n t')). 
+  (Haccess : forall a t n t', P (Aaccess a t n t'))
+  (Hcallframe : forall vm t e, P e -> P (CallFrame vm e t))
+  (Hloopframe : forall n template, P template -> forall active, P active -> P (LoopFrame n template active)).
 
 
 Definition exprs_ind_rec (f : forall e, P e)
@@ -197,6 +204,8 @@ match e with
 | Ebytes es t => Hbytes t (@exprs_ind_rec expr_ind_rec es)
 | Ainit a t es t' => Hainit a t t' (@exprs_ind_rec expr_ind_rec es)
 | Aaccess a t n t' => Haccess a t n t'
+| CallFrame vm body t => Hcallframe vm t (expr_ind_rec body)
+| LoopFrame n template active => Hloopframe n (expr_ind_rec template) (expr_ind_rec active)
 end.
 
 End Expr_Ind.
@@ -227,7 +236,9 @@ Record expr_ind_hypotheses : Prop := {
     expr_match : forall t ps e es, P e -> Ps es -> P (Match e ps es t);
     expr_ebytes : forall t es, Ps es -> P (Ebytes es t);
     expr_ainit : forall a t t' es, Ps es -> P (Ainit a t es t');
-    expr_access : forall a t n t', P (Aaccess a t n t')}.
+    expr_access : forall a t n t', P (Aaccess a t n t');
+    expr_callframe : forall vm t e, P e -> P (CallFrame vm e t);
+    expr_loopframe : forall n template, P template -> forall active, P active -> P (LoopFrame n template active)}.
 
 Context (h: expr_ind_hypotheses).
 
@@ -258,6 +269,8 @@ match e with
 | Ebytes es t => expr_ebytes h t (exprs_ind expr_mut_ind es)
 | Ainit a t es t' => expr_ainit h a t t' (exprs_ind expr_mut_ind es)
 | Aaccess a t n t' => expr_access h a t n t'
+| CallFrame vm body t => expr_callframe h vm t (expr_mut_ind body)
+| LoopFrame n template active => expr_loopframe h n (expr_mut_ind template) (expr_mut_ind active)
 end.
 
 Definition exprs_ind_pair :=
@@ -288,10 +301,35 @@ match e with
 | Ebytes es t => foldr (fun e acc => (size_e e + acc)%nat) O es + 1
 | Ainit a t es t' => foldr (fun e acc => (size_e e + acc)%nat) O es + 1
 | Aaccess a t n t' => 1
+| CallFrame _ body _ => size_e body + 1
+| LoopFrame _ template active => size_e template + size_e active + 1
 end.
 
 Definition size_es (es : list BeePL.expr) := foldr (fun e acc => (BeePL.size_e e + acc)%nat) O es.
 
+
+(* Pattern binders scope only their corresponding Match branch. *)
+Fixpoint vars_bound_by (p : pattern) : list ident :=
+  match p with
+  | Pnone => nil
+  | Psome x => x :: nil
+  | Pbytes x _ fields => x :: map fst fields
+  end.
+
+Definition remove_pattern_variables (pat : pattern) (vars : list ident) : list ident :=
+  fold_right (fun x rest => remove ident_eq x rest) vars (vars_bound_by pat).
+
+Fixpoint match_branch_variables (ps : list pattern)
+    (fvs : list (list ident)) {struct fvs} : list ident :=
+  match fvs with
+  | nil => nil
+  | vars :: rest =>
+      match ps with
+      | nil => vars ++ match_branch_variables nil rest
+      | pat :: pats => remove_pattern_variables pat vars ++
+                       match_branch_variables pats rest
+      end
+  end.
 
 (* Free variables *) 
 Fixpoint free_variables (e : expr) : list ident  :=
@@ -313,10 +351,12 @@ match e with
 | For e1 e2 d e t => free_variables e1 ++ free_variables e2 ++ free_variables e
 | Enone t => nil
 | Esome e t => free_variables e 
-| Match e ps es t => free_variables e ++ flatten (map free_variables es) 
+| Match e ps es t => free_variables e ++ match_branch_variables ps (map free_variables es)
 | Ebytes es t => flatten (map free_variables es)
 | Ainit a t es t' => flatten (map free_variables es)
-| Aaccess a t n t' => nil
+| Aaccess a t n t' => a :: nil
+| CallFrame _ _ _ => nil
+| LoopFrame _ template active => free_variables template ++ free_variables active
 end.
  
 Fixpoint in_vars (x : ident) (xs : list ident) : bool :=
@@ -366,6 +406,8 @@ match e with
 | Ebytes es t => t
 | Ainit _ _ _ t => t
 | Aaccess _ _ _ t => t
+| CallFrame _ _ t => t
+| LoopFrame _ _ _ => Utype
 end.
 
 Fixpoint typeof_exprs (e : list expr) : list BeeTypes.type :=
@@ -520,7 +562,6 @@ Definition globalenv (p: program) :=
 (** The local environment maps local variables to references/locations and types.
   The current value of the variable is stored in the associated memory
   location. *)
-Definition vmap := PTree.t (positive * type). (* map variable -> location & type *)
 
 Definition empty_vmap: vmap  := (PTree.empty (positive * type)).
 
@@ -539,7 +580,7 @@ match v with
 | Vint64 i => Values.Vlong i 
 | Vloc p ofs => Values.Vptr p ofs
 | Voption v => match v with 
-               | None => Values.Vptr (Z.to_pos 0) Ptrofs.zero
+               | None => Values.Vnullptr
                | Some v' => trans_bvalue_cvalue v'
                end
 end.
@@ -564,6 +605,41 @@ match v with
 | Values.Vptr b ofs => OK (Vloc b ofs)
 | _ => Error (MSG "Float values are not allowed" :: nil)
 end.
+
+(* Optional references use the ordinary target pointer ABI: null or a real
+   pointer. Nested options require a different representation and are rejected. *)
+Definition option_reference_payload (payload : option value) : Prop :=
+  match payload with
+  | None => True
+  | Some (Vloc _ _) => True
+  | _ => False
+  end.
+
+Definition decode_optional_pointer (v : Values.val) : res value :=
+  match v with
+  | Values.Vptr b ofs => OK (Voption (Some (Vloc b ofs)))
+  | Values.Vint i =>
+      if negb Archi.ptr64 && Int.eq i Int.zero then OK (Voption None)
+      else Error (MSG "Invalid optional reference representation" :: nil)
+  | Values.Vlong i =>
+      if Archi.ptr64 && Int64.eq i Int64.zero then OK (Voption None)
+      else Error (MSG "Invalid optional reference representation" :: nil)
+  | _ => Error (MSG "Invalid optional reference representation" :: nil)
+  end.
+
+Definition decode_memory_value (ty : type) (v : Values.val) : res value :=
+  match ty with
+  | Ptrtype (Otype pt) =>
+      if is_option_ptr_type pt then
+        Error (MSG "Nested optional references are not supported" :: nil)
+      else decode_optional_pointer v
+  | Vtype Tbool =>
+      match v with
+      | Values.Vint i => OK (Vbool (negb (Int.eq i Int.zero)))
+      | _ => Error (MSG "Invalid boolean memory representation" :: nil)
+      end
+  | _ => trans_cvalue_bvalue v
+  end.
 
 Definition not_undef_or_float (v : Values.val) : Prop :=
 match v with 
@@ -596,11 +672,10 @@ match Senv.find_symbol ge b with
     end.*)
 
 
-(* In BeePL, all pointers come only from trusted helpers or explicit reference creation, 
-   so every dereference is a real memory load and implies a valid memory block. 
-   Allowing deref-by-reference or deref-by-copy would let BeePL fabricate pointers to non-existent memory, 
-   breaking safety. Helpers are trusted but checked via options. 
-   Unlike CompCert, which can produce unchecked Vptr b ofs without a memory read, BeePL disallows such unchecked pointer creation. *)
+(* Scalar deref_addr operations perform real loads. Aggregate operations use
+   separate address-producing rules with checked block/range evidence; they do
+   not obtain unchecked addresses through this scalar memory relation. Helpers
+   need their own contracts, including validity of optional pointer results. *)
 (* [deref_addr ty m addr ofs] computes the value of type [ty] residing in 
     memory [m] at address [addr], offset [ofs] and bitfield designation bf *)
 Inductive deref_addr (ty : type) (m : Memory.mem) (addr : Values.block) (ofs : ptrofs) : bitfield -> value -> Prop :=
@@ -608,14 +683,25 @@ Inductive deref_addr (ty : type) (m : Memory.mem) (addr : Values.block) (ofs : p
   access_mode_type ty = By_value (transl_bchunk_cchunk chunk) ->
   type_is_volatile (transBeePL_type ty) = false ->
   Mem.loadv (transl_bchunk_cchunk chunk) m (trans_bvalue_cvalue (Vloc addr ofs)) = Some v ->
-  trans_cvalue_bvalue v = OK v' ->
+  decode_memory_value ty v = OK v' ->
   deref_addr ty m addr ofs Full v'
 | deref_addr_bitfield: forall sz sg pos width v v' cty,
   transBeePL_type ty = cty ->
   load_bitfield cty sz sg pos width m (Values.Vptr addr ofs) v ->
-  trans_cvalue_bvalue v = OK v' ->
-  deref_addr ty m addr ofs (Bits sz sg pos width) v'.
+  decode_memory_value ty v = OK v' ->
+  deref_addr ty m addr ofs (Bits sz sg pos width) v'
+| deref_addr_bytes :
+  ty = Bytes ->
+  Mem.valid_block m addr ->
+  (Ptrofs.unsigned ofs + 2 * size_chunk Mptr <= Ptrofs.modulus)%Z ->
+  (align_chunk Mptr | Ptrofs.unsigned ofs) ->
+  Mem.range_perm m addr (Ptrofs.unsigned ofs)
+    (Ptrofs.unsigned ofs + 2 * size_chunk Mptr) Cur Readable ->
+  deref_addr ty m addr ofs Full (Vloc addr ofs).
 
+
+Definition is_aggregate_type (ty : type) : bool :=
+  match ty with Stype _ _ | Atype _ _ _ => true | _ => false end.
 
 (* [assign_addr ty m addr ofs v] returns the updated memory after storing the value v at address [addr] and offset 
    [ofs] *) 
@@ -626,6 +712,10 @@ Inductive assign_addr (ty : type) (m : Memory.mem) (addr : Values.block) (ofs : 
   Mem.storev (transl_bchunk_cchunk chunk) m (trans_bvalue_cvalue (Vloc addr ofs)) v = Some m' ->
   trans_cvalue_bvalue v = OK v' ->
   assign_addr ty m addr ofs Full v' m' v'
+| assign_addr_boolean : forall b m',
+  ty = Vtype Tbool ->
+  Mem.storev Mbool m (Values.Vptr addr ofs) (Values.Val.of_bool b) = Some m' ->
+  assign_addr ty m addr ofs Full (Vbool b) m' (Vbool b)
 (*| assign_loc_volatile: forall v chunk tr m' v',
   access_mode_type ty = By_value (transl_bchunk_cchunk chunk) -> 
   type_is_volatile (transBeePL_type ty) = true ->
@@ -633,20 +723,47 @@ Inductive assign_addr (ty : type) (m : Memory.mem) (addr : Values.block) (ofs : 
   trans_cvalue_bvalue v = OK v' ->
   assign_addr ty m addr ofs Full v' m' v'*)
 | assign_addr_copy: forall b' ofs' bytes m',
-  access_mode_type ty = By_copy ->
+  is_aggregate_type ty = true ->
+  (0 <= sizeof_type (genv_cenv ge) ty)%Z ->
+  Mem.valid_block m b' -> Mem.valid_block m addr ->
+  (Ptrofs.unsigned ofs' + sizeof_type (genv_cenv ge) ty
+    <= Ptrofs.modulus)%Z ->
+  (Ptrofs.unsigned ofs + sizeof_type (genv_cenv ge) ty
+    <= Ptrofs.modulus)%Z ->
   (alignof_blockcopy (bcomposite_composite_env (genv_cenv ge)) (transBeePL_type ty) | Ptrofs.unsigned ofs') ->
   (alignof_blockcopy (bcomposite_composite_env (genv_cenv ge)) (transBeePL_type ty) | Ptrofs.unsigned ofs) ->
       b' <> addr \/ Ptrofs.unsigned ofs' = Ptrofs.unsigned ofs
-              \/ Ptrofs.unsigned ofs' + sizeof (bcomposite_composite_env (genv_cenv ge)) (transBeePL_type ty) <= Ptrofs.unsigned ofs
-              \/ Ptrofs.unsigned ofs + sizeof (bcomposite_composite_env (genv_cenv ge)) (transBeePL_type ty) <= Ptrofs.unsigned ofs' ->
-   Mem.loadbytes m b' (Ptrofs.unsigned ofs') (sizeof (bcomposite_composite_env (genv_cenv ge)) (transBeePL_type ty)) = Some bytes ->
+              \/ Ptrofs.unsigned ofs' + sizeof_type (genv_cenv ge) ty <= Ptrofs.unsigned ofs
+              \/ Ptrofs.unsigned ofs + sizeof_type (genv_cenv ge) ty <= Ptrofs.unsigned ofs' ->
+   Mem.loadbytes m b' (Ptrofs.unsigned ofs') (sizeof_type (genv_cenv ge) ty) = Some bytes ->
    Mem.storebytes m addr (Ptrofs.unsigned ofs) bytes = Some m' ->
    assign_addr ty m addr ofs Full (Vloc b' ofs') m' (Vloc b' ofs')
 | assign_addr_bitfield: forall sz sg pos width v m' v' bv bv',
   store_bitfield (transBeePL_type ty) sz sg pos width m (Values.Vptr addr ofs) v m' v' ->
   trans_cvalue_bvalue v = OK bv ->
   trans_cvalue_bvalue v' = OK bv' -> 
-  assign_addr ty m addr ofs (Bits sz sg pos width) bv m' bv'. 
+  assign_addr ty m addr ofs (Bits sz sg pos width) bv m' bv'
+| assign_addr_option : forall pt payload m',
+  ty = Ptrtype (Otype pt) ->
+  is_option_ptr_type pt = false ->
+  type_is_volatile (transBeePL_type ty) = false ->
+  option_reference_payload payload ->
+  Mem.storev Mptr m (Values.Vptr addr ofs)
+    (trans_bvalue_cvalue (Voption payload)) = Some m' ->
+  assign_addr ty m addr ofs Full (Voption payload) m' (Voption payload)
+| assign_addr_bytes_copy : forall source source_offset bytes m',
+  ty = Bytes ->
+  Mem.valid_block m source -> Mem.valid_block m addr ->
+  (Ptrofs.unsigned source_offset + 2 * size_chunk Mptr <= Ptrofs.modulus)%Z ->
+  (Ptrofs.unsigned ofs + 2 * size_chunk Mptr <= Ptrofs.modulus)%Z ->
+  (align_chunk Mptr | Ptrofs.unsigned source_offset) ->
+  (align_chunk Mptr | Ptrofs.unsigned ofs) ->
+  (source <> addr \/ Ptrofs.unsigned source_offset = Ptrofs.unsigned ofs \/
+    Ptrofs.unsigned source_offset + 2 * size_chunk Mptr <= Ptrofs.unsigned ofs \/
+    Ptrofs.unsigned ofs + 2 * size_chunk Mptr <= Ptrofs.unsigned source_offset) ->
+  Mem.loadbytes m source (Ptrofs.unsigned source_offset) (2 * size_chunk Mptr) = Some bytes ->
+  Mem.storebytes m addr (Ptrofs.unsigned ofs) bytes = Some m' ->
+  assign_addr ty m addr ofs Full (Vloc source source_offset) m' (Vloc source source_offset).
 
 (* Allocation of function local variables *)
 (* [alloc_variables vm1 m1 vars vm2 m2] allocates one memory block for each variable
@@ -663,9 +780,9 @@ let Sigma' := PTree.set l1 ty Sigma in
 Inductive alloc_variables : store_context -> vmap -> Memory.mem -> list (ident * type) -> vmap -> Memory.mem -> store_context -> Prop :=
 | alloc_variables_nil : forall Sigma vm hm, 
   alloc_variables Sigma vm hm nil vm hm Sigma
-| alloc_variables_con : forall Sigma e m id ty vars m1 l1 m2 e2 Sigma',
-  balloc Sigma m ty 0 (sizeof_type (genv_cenv ge) ty) = (m1, l1, Sigma') ->
-  alloc_variables Sigma (PTree.set id (l1, ty) e) m1 vars e2 m2 Sigma' ->
+| alloc_variables_con : forall Sigma e m id ty vars m1 l1 m2 e2 Sigma1 Sigma',
+  balloc Sigma m ty 0 (sizeof_type (genv_cenv ge) ty) = (m1, l1, Sigma1) ->
+  alloc_variables Sigma1 (PTree.set id (l1, ty) e) m1 vars e2 m2 Sigma' ->
   alloc_variables Sigma e m ((id, ty) :: vars) e2 m2 Sigma'.
 
 (** Initialization of local variables that are parameters to a function.
@@ -679,7 +796,13 @@ Inductive bind_variables  (e: vmap): Memory.mem -> list (ident * type) -> list v
   PTree.get id e = Some(b, ty) ->
   assign_addr ty m b Ptrofs.zero Full v1 m1 v1' ->
   bind_variables e m1 params vl m2 ->
-  bind_variables e m ((id, ty) :: params) (v1 :: vl) m2.
+  bind_variables e m ((id, ty) :: params) (v1 :: vl) m2
+(* Unit parameters have a binding but no memory payload. Their zero-size
+   allocation is retained; initialization merely consumes the unit argument. *)
+| bind_variables_unit : forall m id params vl b m',
+  PTree.get id e = Some (b, Utype) ->
+  bind_variables e m params vl m' ->
+  bind_variables e m ((id, Utype) :: params) (Vunit :: vl) m'.
 
 (** Return the list of blocks in the codomain of [benv], with low and high bounds. **)
 
@@ -689,12 +812,6 @@ Definition block_of_binding (id_b_ty: ident * (positive * BeeTypes.type)) :=
 Definition blocks_of_env (e: vmap) : list (ident * Z * Z) :=
   List.map block_of_binding (PTree.elements e).
 
-Fixpoint vars_bound_by (p : pattern) : list ident :=
-  match p with
-  | Pnone => nil
-  | Psome x => x :: nil
-  | Pbytes x _ fields => x :: map fst fields
-  end.
 
 End Memory_semantics.
 
@@ -713,15 +830,18 @@ Definition x_in_pattern (x : ident) (p : pattern) : bool :=
 let bound_vars := vars_bound_by p in
 x_in_xs x bound_vars.
 
-Fixpoint subst_match_branches (x : ident) (se : expr) (ps : list pattern) (es : list expr) : list expr :=
-  match ps, es with
-  | nil, nil => nil
-  | p :: ps', e :: es' =>
+Fixpoint subst_match_branches (x : ident) (se : expr) (ps : list pattern) (es : list expr)
+  {struct es} : list expr :=
+  match es with
+  | nil => nil
+  | e :: es' => match ps with
+    | nil => es
+    | p :: ps' =>
       let e' := if x_in_pattern x p
                 then e
                 else subst x se e in
       e' :: subst_match_branches x se ps' es'
-  | _, _ => es
+    end
   end.
 
 End SubstHelper.
@@ -754,18 +874,135 @@ Fixpoint subst (x : ident) (se : expr) (e : expr) {struct e} : expr :=
   | Unit t => Unit t 
   | Addr l p t => Addr l p t
   (*| Eapp ef ts es t => Eapp ef ts (substs subst x se es) t*)
-  | Sinit y ids es t => if (x =? y)%positive then Sinit y ids es t
-                        else Sinit y ids (substs subst x se es) t
+  | Sinit y ids es t => Sinit y ids (substs subst x se es) t
   | Sfield e fld t => Sfield (subst x se e) fld t
   | For e1 e2 d e' t => For (subst x se e1) (subst x se e2) d (subst x se e') t
   | Enone t => Enone t 
   | Esome e t => Esome (subst x se e) t
-  | Match e ps es t => (*Match (subst x se e) ps (subst_match_branches subst x se ps es) t : correct *)
-    Match (subst x se e) ps (substs subst x se es) t (* replace this with above *)
+  | Match e ps es t =>
+    Match (subst x se e) ps (subst_match_branches subst x se ps es) t
   | Ebytes es t => Ebytes (substs subst x se es) t
   | Ainit a t es t' => Ainit a t (substs subst x se es) t'
-  | Aaccess a t n t' => Aaccess a t n t'
+  | Aaccess a t n t' =>
+      if (x =? a)%positive then Prim (ArrayRead n) (se :: nil) t'
+      else Aaccess a t n t'
+  | CallFrame _ _ _ => e
+  | LoopFrame n template active => LoopFrame n (subst x se template) (subst x se active)
   end.
+
+(* Instantiate a pattern's field bindings from right to left, matching the
+   shadowing order of extends_context. Reject arity mismatches explicitly. *)
+Fixpoint instantiate_field_values (fields : list (ident * type))
+    (values : list value) (body : expr) : res expr :=
+  match fields, values with
+  | nil, nil => OK body
+  | (name, ty) :: rest, v :: tail =>
+      match instantiate_field_values rest tail body with
+      | OK body' => OK (subst name (Val v ty) body')
+      | Error error => Error error
+      end
+  | _, _ => Error (msg "Pattern field/value arity mismatch")
+  end.
+
+Definition instantiate_bytes_header (header : ident) (schema : type)
+    (fields : list (ident * type)) (header_value : value)
+    (field_values : list value) (body : expr) : res expr :=
+  match instantiate_field_values fields field_values body with
+  | OK body' => OK (subst header (Val header_value schema) body')
+  | Error error => Error error
+  end.
+
+(* A store entry for a reference records the pointed-to allocation's type.
+   Aggregate members need offset-sensitive evidence within that allocation. *)
+Definition stored_object_type (stored : type) : type :=
+  match stored with
+  | Ptrtype (Reftype basic _) => construct_type_btype basic
+  | _ => stored
+  end.
+
+(* Preserve nominal BeePL field types instead of round-tripping through C.
+   In particular, bool and uint8 share a C representation but are distinct. *)
+Fixpoint source_member_type (field : ident) (members : list bmember) : res type :=
+  match members with
+  | nil => Error (MSG "Unknown BeePL field " :: CTX field :: nil)
+  | member :: rest =>
+      let name := match member with
+        | BeeTypes.Member_plain name _ => name
+        | BeeTypes.Member_bitfield name _ _ _ _ _ => name
+        end in
+      if ident_eq field name then OK (type_bmember member)
+      else source_member_type field rest
+  end.
+
+(* Initializer arguments retain their BeePL types, including Bool. *)
+Fixpoint source_member_types (fields : list ident) (members : list bmember) : res (list type) :=
+  match fields with
+  | nil => OK nil
+  | field :: rest =>
+      match source_member_type field members with
+      | Error err => Error err
+      | OK ty => match source_member_types rest members with
+                 | Error err => Error err
+                 | OK tys => OK (ty :: tys)
+                 end
+      end
+  end.
+
+Inductive object_type_at (cenv : bcomposite_env) (Sigma : store_context)
+    (block : Values.block) : Z -> type -> Prop :=
+| object_type_root : forall stored,
+    PTree.get block Sigma = Some stored ->
+    (0 <= sizeof_type cenv (stored_object_type stored))%Z ->
+    object_type_at cenv Sigma block 0 (stored_object_type stored)
+| object_type_field : forall base sid attr co field cty ty delta,
+    object_type_at cenv Sigma block base (Stype sid attr) ->
+    PTree.get sid cenv = Some co ->
+    Ctyping.type_of_member attr field (bmembers_cmembers co.(co_members)) = OK cty ->
+    source_member_type field co.(co_members) = OK ty ->
+    field_offset (bcomposite_composite_env cenv) field
+      (bmembers_cmembers co.(co_members)) = OK (delta, Full) ->
+    (0 <= delta)%Z -> (0 <= sizeof_type cenv ty)%Z ->
+    (delta + sizeof_type cenv ty <= sizeof_type cenv (Stype sid attr))%Z ->
+    object_type_at cenv Sigma block (base + delta) ty
+| object_type_array_element : forall base ty len attr index,
+    object_type_at cenv Sigma block base (Atype ty len attr) ->
+    (0 <= index < len)%Z -> (0 <= sizeof_type cenv ty)%Z ->
+    object_type_at cenv Sigma block (base + index * sizeof_type cenv ty) ty.
+
+(* Reading an aggregate produces its address representation. The extent is
+   checked independently of scalar loads; initialized field contents belong
+   to the heap invariant, rather than to this address-producing operation. *)
+Definition aggregate_readable (cenv : bcomposite_env) (m : Mem.mem)
+    (block : Values.block) (base : ptrofs) (ty : type) : Prop :=
+  is_aggregate_type ty = true /\
+  (0 <= sizeof_type cenv ty)%Z /\
+  (Ptrofs.unsigned base + sizeof_type cenv ty <= Ptrofs.modulus)%Z /\
+  Mem.valid_block m block /\
+  Mem.range_perm m block (Ptrofs.unsigned base)
+    (Ptrofs.unsigned base + sizeof_type cenv ty) Cur Readable.
+
+(* Aggregate field access returns an address only after checking the declared
+   field layout, a representable offset, and the complete readable extent. *)
+Inductive aggregate_field_access (cenv : bcomposite_env) (m : Mem.mem)
+    (block : Values.block) (base : ptrofs) (base_type : type)
+    (field : ident) (ty : type) : ptrofs -> Prop :=
+| aggregate_field_access_intro : forall sid attr co cty delta,
+    (base_type = Stype sid attr \/
+     base_type = Ptrtype (Reftype (Bstruct sid attr) noattr)) ->
+    PTree.get sid cenv = Some co ->
+    Ctyping.type_of_member attr field (bmembers_cmembers co.(co_members)) = OK cty ->
+    source_member_type field co.(co_members) = OK ty ->
+    field_offset (bcomposite_composite_env cenv) field
+      (bmembers_cmembers co.(co_members)) = OK (delta, Full) ->
+    (is_aggregate_type ty || is_bytes ty)%bool = true ->
+    (0 <= delta)%Z -> (0 <= sizeof_type cenv ty)%Z ->
+    (delta + sizeof_type cenv ty <= sizeof_type cenv (Stype sid attr))%Z ->
+    (Ptrofs.unsigned base + delta + sizeof_type cenv ty <= Ptrofs.max_unsigned)%Z ->
+    Mem.valid_block m block ->
+    Mem.range_perm m block (Ptrofs.unsigned base + delta)
+      (Ptrofs.unsigned base + delta + sizeof_type cenv ty) Cur Readable ->
+    aggregate_field_access cenv m block base base_type field ty
+      (Ptrofs.repr (Ptrofs.unsigned base + delta)).
 
 (* Inductive principles for subst *)
 Inductive SubstE (x:ident) (se:expr) : expr -> expr -> Prop :=
@@ -803,9 +1040,7 @@ Inductive SubstE (x:ident) (se:expr) : expr -> expr -> Prop :=
 (*| S_Eapp ef ts es es' t
     (Hes : SubstEs x se es es') :
     SubstE x se (Eapp ef ts es t) (Eapp ef ts es' t)*)
-| S_Sinit_hit y ids es t (Hy : x = y) :
-    SubstE x se (Sinit y ids es t) (Sinit y ids es t)
-| S_Sinit_miss y ids es es' t (Hy : x <> y)
+| S_Sinit y ids es es' t
     (Hes : SubstEs x se es es') :
     SubstE x se (Sinit y ids es t) (Sinit y ids es' t)
 | S_Sfield e e' fld t
@@ -821,7 +1056,7 @@ Inductive SubstE (x:ident) (se:expr) : expr -> expr -> Prop :=
     SubstE x se (Esome e t) (Esome e' t)
 | S_Match e e' ps es es' t
     (He : SubstE  x se e  e')
-    (Hs : SubstEs x se es es') :
+    (Hs : SubstMatch x se ps es es') :
     SubstE x se (Match e ps es t) (Match e' ps es' t)
 | S_Ebytes es es' t
     (Hs : SubstEs x se es es') :
@@ -829,8 +1064,18 @@ Inductive SubstE (x:ident) (se:expr) : expr -> expr -> Prop :=
 | S_Ainit a t0 es es' t'
     (Hs : SubstEs x se es es') :
     SubstE x se (Ainit a t0 es t') (Ainit a t0 es' t')
-| S_Aaccess a t0 n t' :
+| S_Aaccess_same t0 n t' :
+    SubstE x se (Aaccess x t0 n t') (Prim (ArrayRead n) (se :: nil) t')
+| S_Aaccess_other a t0 n t'
+    (Hneq : x <> a) :
     SubstE x se (Aaccess a t0 n t') (Aaccess a t0 n t')
+
+| S_CallFrame vm body t :
+    SubstE x se (CallFrame vm body t) (CallFrame vm body t)
+
+| S_LoopFrame n template active template' active'
+    (Ht : SubstE x se template template') (Ha : SubstE x se active active') :
+    SubstE x se (LoopFrame n template active) (LoopFrame n template' active')
 
 with SubstEs (x:ident) (se:expr) : list expr -> list expr -> Prop :=
 | S_Nil :
@@ -838,11 +1083,26 @@ with SubstEs (x:ident) (se:expr) : list expr -> list expr -> Prop :=
 | S_Cons e e' es es'
     (He  : SubstE  x se e  e')
     (Hes : SubstEs x se es es') :
-    SubstEs x se (e :: es) (e' :: es').
+    SubstEs x se (e :: es) (e' :: es')
+
+with SubstMatch (x:ident) (se:expr) : list pattern -> list expr -> list expr -> Prop :=
+| SM_empty ps : SubstMatch x se ps nil nil
+| SM_no_patterns es : SubstMatch x se nil es es
+| SM_bound p ps e es es'
+    (Hbound : x_in_pattern x p = true)
+    (Htail : SubstMatch x se ps es es') :
+    SubstMatch x se (p :: ps) (e :: es) (e :: es')
+| SM_free p ps e e' es es'
+    (Hfree : x_in_pattern x p = false)
+    (He : SubstE x se e e')
+    (Htail : SubstMatch x se ps es es') :
+    SubstMatch x se (p :: ps) (e :: es) (e' :: es').
 
 Scheme SubstE_mut_ind  := Induction for SubstE  Sort Prop
-with   SubstEs_mut_ind := Induction for SubstEs Sort Prop.
+with   SubstEs_mut_ind := Induction for SubstEs Sort Prop
+with   SubstMatch_mut_ind := Induction for SubstMatch Sort Prop.
 Combined Scheme Subst_mutind from SubstE_mut_ind, SubstEs_mut_ind.
+Combined Scheme Subst_all_mutind from SubstE_mut_ind, SubstEs_mut_ind, SubstMatch_mut_ind.
 
 
 Inductive well_formed_value : value -> type -> Prop :=
@@ -853,7 +1113,19 @@ Inductive well_formed_value : value -> type -> Prop :=
 | wf_vlong : forall s a i,
              well_formed_value (Vint64 i) (Vtype (Tlong s a))
 | wf_vloc : forall l ofs t a,
-            well_formed_value (Vloc l ofs) (Ptrtype (Reftype t a)).
+            well_formed_value (Vloc l ofs) (Ptrtype (Reftype t a))
+| wf_varray : forall l base elem len attr,
+    well_formed_value (Vloc l base) (Atype elem len attr)
+| wf_vstruct : forall l ofs id attr,
+    well_formed_value (Vloc l ofs) (Stype id attr)
+| wf_vbytes : forall l ofs,
+    well_formed_value (Vloc l ofs) Bytes
+| wf_vfun : forall l args effects result variadic,
+    well_formed_value (Vloc l Ptrofs.zero) (Ftype args effects result variadic)
+| wf_voption : forall o inner,
+    is_option_ptr_type inner = false ->
+    (forall v, o = Some v -> well_formed_value v (Ptrtype inner)) ->
+    well_formed_value (Voption o) (Ptrtype (Otype inner)).
 
 
 Fixpoint bind_vars (Gamma : ty_context) (l: list (ident * type)) : ty_context :=

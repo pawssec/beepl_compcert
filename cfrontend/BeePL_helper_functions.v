@@ -26,6 +26,11 @@ ef_empty_map ["bpf_get_prandom_u32" <- (nil, (tint32u, (Io :: nil)))]
              ["bpf_skb_change_type" <-
                ((Ptrtype (Reftype (Bstruct (ident_of_string "__sk_buff") noattr) noattr)
                  :: tint32u :: nil), (tlongs, (Write :: Io :: nil)))]
+             ["bpf_skb_load_bytes" <- ((Ptrtype (Reftype (Bstruct (ident_of_string "__sk_buff") noattr) noattr) :: tint32u :: trint32u :: tint32u :: nil),
+                (tlongs, (Read :: Write :: Io :: nil)))]
+             ["bpf_skb_store_bytes" <- ((Ptrtype (Reftype (Bstruct (ident_of_string "__sk_buff") noattr) noattr) :: tint32u :: trint32u :: tint32u :: tlongu :: nil),
+                (tlongs, (Read :: Write :: Io :: nil)))]
+             ["bpf_redirect" <- ((tint32u :: tlongu :: nil), (tlongs, (Io :: nil)))]
              ["add" <- ((tint32s :: trint32s :: nil), (tint32s, nil))]
              ["bpf_get_current_uid_gid" <- (nil, (tlongu, (Io :: nil)))]
              ["bpf_map_lookup_elem" <- ((Atype tint32u 8 noattr :: trint32u :: nil),

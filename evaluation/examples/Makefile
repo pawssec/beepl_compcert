@@ -27,7 +27,7 @@ ifeq ($(filter $(EXAMPLE),$(NAMES)),)
 $(error Unknown EXAMPLE '$(EXAMPLE)'; choose one of $(NAMES))
 endif
 
-.PHONY: kernel-vlan-check cgroup-live kernel-cgroup-check all build compiler artifacts packets check test kernel-test kernel-check kernel-packet-check kernel-socket-check kernel-tc-check kernel-map-check kernel-trace-check trace-live trace-observe map-observe map-load map-dump map-unload tc-live socket-live load run inspect jited attach detach unload help
+.PHONY: kernel-lb-check lb-live kernel-vlan-check cgroup-live kernel-cgroup-check all build compiler artifacts packets check test kernel-test kernel-check kernel-packet-check kernel-socket-check kernel-tc-check kernel-map-check kernel-trace-check trace-live trace-observe map-observe map-load map-dump map-unload tc-live socket-live load run inspect jited attach detach unload help
 all: compiler
 	@$(MAKE) --no-print-directory artifacts packets
 
@@ -78,6 +78,12 @@ kernel-test:
 
 kernel-check:
 	$(PYTHON) $(EVAL)/tools/run.py --prebuilt --kernel --report $(EVAL)/results/kernel.json
+
+kernel-lb-check:
+	$(PYTHON) $(EVAL)/tools/run.py --prebuilt --kernel --lb-only --report $(EVAL)/results/kernel-lb.json
+
+lb-live:
+	$(PYTHON) $(EVAL)/tools/lb_live.py
 
 kernel-vlan-check:
 	$(PYTHON) $(EVAL)/tools/run.py --prebuilt --kernel --vlan-only --report $(EVAL)/results/kernel-vlan.json
@@ -135,6 +141,7 @@ load:
 	$(BPFTOOL) -d prog load $(OUT)/$(EXAMPLE).o $(PIN) type $(PROGTYPE)
 
 run:
+	@test "$(EXAMPLE)" != tc_udp_lb || { echo "Use kernel-lb-check or lb-live to configure the backend map"; exit 1; }
 	@test -z '$(filter cgroup_sock_%,$(EXAMPLE))' || { echo 'Socket creation needs live processes: use make cgroup-live'; exit 1; }
 	@test -z '$(filter $(TRACE_NAMES),$(EXAMPLE))' || { echo 'Tracing needs real syscall events: use make trace-live'; exit 1; }
 	@test -f $(PACKETS)/ipv4.bin || { echo 'Run make packets first, without sudo.'; exit 1; }
@@ -161,6 +168,8 @@ unload:
 	rm -f -- $(PIN)
 
 help:
+	@echo 'sudo make kernel-lb-check           Check UDP load-balancer rewriting and packet guards'
+	@echo 'sudo make lb-live                   Test requests/replies across two real UDP backends'
 	@echo 'sudo make kernel-vlan-check        Verify single VLAN and double-tagged QinQ filtering'
 	@echo 'sudo make cgroup-live              Test socket creation in a disposable cgroup v2'
 	@echo 'make                       Build compiler, all examples, bytecode and packets'

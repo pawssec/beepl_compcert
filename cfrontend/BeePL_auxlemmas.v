@@ -4,6 +4,8 @@ Require Import Coq.Arith.EqNat Coq.ZArith.Int Integers AST Maps Linking Ctypes S
 Require Import BeePL BeePL_aux BeePL_mem BeeTypes BeePL Csyntax Clight Globalenvs BeePL_Csyntax SimplExpr.
 Require Import compcert.common.Errors Initializersproof Cstrategy Coqlib Errors.
 
+Require Import BeePL_type_equality.
+
 From mathcomp Require Import all_ssreflect. 
 
 (***** Correctness proof for type transformation from BeePL to Ctypes *****)
@@ -480,75 +482,12 @@ destruct s; destruct s0;
 Qed.
 
 Lemma eq_typ : forall t t',
-    eq_type t t'->
-    t = t'.
-Proof.
-  (*intro t. induction t.
-  induction t'; try discriminate; try auto.
-  induction t'; try discriminate; try auto.
-  - induction p; induction p0; try inv H1; try discriminate; auto.
-    intros.
-  destruct i; destruct i0; destruct s; destruct s0; try discriminate; auto;
-    destruct (attr_eq a a0) eqn:Heq; simpl in *; try discriminate; subst; auto.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  intros. destruct s; destruct s0; try discriminate; auto;
-    destruct (attr_eq a a0) eqn:Heq; simpl in *; try discriminate; subst; auto.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-  rewrite Heq in H. unfold proj_sumbool in H. simpl in H. discriminate.
-- induction t'; try discriminate; try inv H.
-  revert p0. induction p; induction p0; try discriminate; try inv H.
-  intros.
-  destruct i; destruct i0; destruct b; destruct b0; try discriminate; auto;
-    destruct (attr_eq a a0) eqn:Heq; simpl in *; try discriminate; subst; auto;
-  apply andb_prop in H; destruct H; try apply andb_prop in H; destruct H;
-  try apply Pos.eqb_eq in H; try apply eq_prim in H1; subst; auto;
-  try (rewrite Heq in H0; unfold proj_sumbool in H0; simpl in H0; discriminate);
-  try (apply andb_prop in H1; destruct H1; apply Pos.eqb_eq in H; subst;
-  destruct (attr_eq a1 a2) eqn:Heqa; subst; auto); simpl in *; try discriminate.
-  try (apply andb_prop in H1; destruct H1; apply andb_prop in H; destruct H;
-  apply Z.eqb_eq in H2; subst; apply eq_prim in H; subst;
-  destruct (attr_eq a1 a2) eqn:Heqa; subst; auto; discriminate).
+    eq_type t t' -> t = t'.
+Proof. intros t t' H. apply eq_type_sound. exact H. Qed.
 
-  try (apply andb_prop in H1; destruct H1; apply andb_prop in H; destruct H;
-  apply Z.eqb_eq in H2; subst; apply eq_prim in H; subst;
-  destruct (attr_eq a1 a2) eqn:Heqa; subst; auto; discriminate). symmetry in Heq.
-  rewrite <- Heq in H0. simpl in H0. symmetry in H0. apply eq_prim in H0. subst.
-  auto. admit.
-  destruct (attr_eq a1 a2) eqn:Heqa; subst; auto; discriminate.
-  destruct (attr_eq a1 a2) eqn:Heqa; subst; auto; try discriminate.
-  apply andb_prop in H. destruct H. apply Z.eqb_eq in H2. apply eq_prim in H. subst.
-  auto.
-intros. simpl in *. specialize IHp with p0. apply IHp in H.*)
-Admitted.
-
-Lemma eq_ptr: forall t t',
-    eq_ptr_type t t' ->
-    t = t'.
-Proof.
-  Admitted.
-  (*
-intros.
-induction t; induction t'; try inv H.
- apply andb_prop in H1 as [H01 H02].
-    apply andb_prop in H01 as [H01 H03].
-    apply Pos.eqb_eq in H01. simpl in *.
-    apply eq_bt in H03.
-    subst.
-    destruct (attr_eq _ _) eqn: Heqa; simpl in *; try discriminate; subst; auto.
-    simpl in *. admit.
- apply andb_prop in H1 as [H01 H02].
-    apply andb_prop in H01 as [H01 H03].
-    destruct t t0.
-*)
-
-
+Lemma eq_ptr : forall t t',
+    eq_ptr_type t t' -> t = t'.
+Proof. intros t t' H. apply eq_ptr_type_sound. exact H. Qed.
 
 Lemma eq_type_trans : forall t t' t'',
 eq_type t t' ->
@@ -717,37 +656,18 @@ sub_effect ef1 ef2 = true ->
 sub_effect ef2 ef3 = true ->
 sub_effect ef1 ef3 = true.
 Proof.
-intro. induction ef1.
-  - intros. apply sub_effect_nil.
-  - intros. generalize dependent ef3. induction ef2.
-    + intros. inv H.
-    + intros. induction ef3.
-      * inv H0.
-      * simpl. destruct (eq_effect_label a a1) eqn:Eqaa1.
-        -- simpl in H. simpl in H0. destruct (eq_effect_label a a0) eqn:Eqaa0.
-           ++ assert (eq_effect_label a0 a1 = true).
-              apply eq_effect_trans with (a := a); auto.
-              rewrite H1 in H0. apply IHef1 with (ef2 := ef2); auto.
-           ++ destruct (eq_effect_label a0 a1) eqn:Eqa01.
-              ** assert (eq_effect_label a a0).
-                 apply eq_effect_trans' with (a := a1). auto.
-                 auto. congruence.
-              ** apply IHef1 with (ef2 := ef2).
-                 --- apply sub_effect_1s with (a := a) in H.
-                     apply sub_effect_ss in H. auto.
-                     apply sub_effect_1s with (a := a0) in H0.
-                     apply sub_effect_ss in H0. auto.
-                 --- have Hmid : sub_effect (a :: ef1) (a1 :: ef3) = true.
-                     simpl. rewrite Eqaa1. 
-                     apply IHef3.
-                     apply sub_effect_1s with (a:= a) in H.
-                     apply sub_effect_ss in H. apply IHef1 with (ef3 := a1 :: ef3) in H; auto.
-                     destruct (eq_effect_label a0 a1) eqn:Eqa01.
-                     simpl in H0. rewrite Eqa01 in H0.
-                     admit.
-                     simpl in H0. rewrite Eqa01 in H0. auto.
-                     simpl in Hmid. rewrite Eqaa1 in Hmid. auto.
-Admitted.                 
+  intros ef1 ef2 ef3. revert ef1 ef2.
+  induction ef3 as [|label rest IH]; intros ef1 ef2 H12 H23.
+  - destruct ef2; [destruct ef1; assumption || reflexivity|discriminate H23].
+  - destruct ef2 as [|middle tail].
+    + destruct ef1; [reflexivity|discriminate H12].
+    + simpl in H23. destruct (eq_effect_label middle label) eqn:Hml.
+      * assert (middle=label) by (destruct middle, label; discriminate || reflexivity).
+        subst middle. destruct ef1 as [|head remaining]; [reflexivity|].
+        simpl in H12 |- *. destruct (eq_effect_label head label) eqn:Hhl;
+          eapply IH; eauto.
+      * apply sub_effect_1s. eapply IH; eauto.
+Qed.
 
 
 

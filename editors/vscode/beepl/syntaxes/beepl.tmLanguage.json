@@ -1,0 +1,127 @@
+{
+  "name": "BeePL",
+  "scopeName": "source.beepl",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#directives"
+    },
+    {
+      "include": "#functions"
+    },
+    {
+      "include": "#structs"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#effects"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#constants"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#helpers"
+    },
+    {
+      "include": "#calls"
+    },
+    {
+      "include": "#operators"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.block.beepl",
+      "begin": "\\(\\*",
+      "end": "\\*\\)",
+      "patterns": [
+        {
+          "include": "#comments"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.beepl",
+      "begin": "\"",
+      "end": "\""
+    },
+    "directives": {
+      "match": "(#(?:ebpf|section))\\b(?:[ \\t]+([.A-Za-z_][\\w/.:\\-]*))?",
+      "captures": {
+        "1": {
+          "name": "keyword.control.directive.beepl"
+        },
+        "2": {
+          "name": "entity.name.section.beepl"
+        }
+      }
+    },
+    "functions": {
+      "match": "\\b(fun)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": {
+          "name": "storage.type.function.beepl"
+        },
+        "2": {
+          "name": "entity.name.function.beepl"
+        }
+      }
+    },
+    "structs": {
+      "match": "\\b(struct|ostruct)\\s+([A-Za-z_]\\w*)",
+      "captures": {
+        "1": {
+          "name": "storage.type.struct.beepl"
+        },
+        "2": {
+          "name": "entity.name.type.beepl"
+        }
+      }
+    },
+    "types": {
+      "name": "storage.type.beepl",
+      "match": "\\b(?:o?(?:u?int(?:8|16|32)|u?long)|bool|unit|bytes|array|option)\\b"
+    },
+    "effects": {
+      "name": "storage.modifier.effect.beepl",
+      "match": "\\b(?:io|read|write|alloc|divergence|vararg|novararg)\\b"
+    },
+    "keywords": {
+      "name": "keyword.control.beepl",
+      "match": "\\b(?:let|in|if|then|else|for|Up|Down|match|with|ref|some|none|Pbytes)\\b"
+    },
+    "constants": {
+      "name": "constant.language.beepl",
+      "match": "\\b(?:true|false)\\b"
+    },
+    "numbers": {
+      "name": "constant.numeric.beepl",
+      "match": "\\b[0-9]+[lL]?\\b"
+    },
+    "helpers": {
+      "name": "support.function.beepl",
+      "match": "\\bbpf_[A-Za-z_0-9]+\\b"
+    },
+    "calls": {
+      "name": "entity.name.function.beepl",
+      "match": "\\b[A-Za-z_]\\w*(?=\\s*\\()"
+    },
+    "operators": {
+      "name": "keyword.operator.beepl",
+      "match": ":=|->|<<|>>|==|!=|<=|>=|[+*/%&|^~!<>=\\-]"
+    }
+  }
+}

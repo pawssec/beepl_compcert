@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from cgroup_eval import (CGROUP_PROGRAMS, CGROUP_SECTION, validate_object as validate_cgroup,
                          run_cases as run_cgroup_cases)
 from vlan_eval import VLAN_NAMES, cases as vlan_cases
+from lb_eval import LB_NAME, validate_object as validate_lb, run_cases as run_lb_cases
 from map_eval import MAP_TYPES, validate_object, run_cases as run_map_cases
 from trace_eval import (TRACE_PROGRAMS, TRACE_SECTION, validate_object as validate_trace,
                         run_cases as run_trace_cases)
@@ -92,6 +93,10 @@ def cases():
                  ('arp_ethertype', packet(0x0806), [1])]
     return {
         **vlan_cases(),
+        **{source.stem: [('ipv4_all_nested_states', normal, [2]),
+                         ('ipv6_all_nested_states', packet(0x86dd), [2]),
+                         ('ethernet_minimum_all_nested_states', normal[:14], [2])]
+           for source in (HERE / 'tests/accept').glob('xdp_nested*.bpl')},
         'tc_pass': [('ipv4', normal, [0]), ('ipv6', packet(0x86dd), [0])],
         'tc_drop': [('ipv4', normal, [2]), ('ipv6', packet(0x86dd), [2])],
         'tc_ipv4': [('ipv4', normal, [0]), ('ipv6', packet(0x86dd), [2]),
@@ -224,7 +229,10 @@ def main():
     parser.add_argument('--kernel', action='store_true', help='load and test programs; needs BPF privileges')
     parser.add_argument('--emulate', action='store_true', help='run limited userspace instruction smoke tests (not kernel tests)')
     parser.add_argument('--program', help='test just this entry-point/file stem')
+    parser.add_argument('--lb-only', action='store_true', help='test UDP load-balancer packet actions')
     parser.add_argument('--vlan-only', action='store_true', help='test on-wire VLAN and QinQ parsers')
+    parser.add_argument('--nested-options', action='store_true',
+                        help='test only opt-in xdp_nested*.bpl accept fixtures (not kernel-confirmed examples)')
     parser.add_argument('--packet-parsing', action='store_true', help='test the five fixed-layout packet parsing examples')
     parser.add_argument('--cgroup-only', action='store_true', help='test socket-create cgroup policies')
     parser.add_argument('--socket-only', action='store_true', help='test socket filters only')
@@ -242,7 +250,8 @@ def main():
     out = BUILD / 'objects'
     out.mkdir(parents=True, exist_ok=True)
     results = []
-    sources = sorted((HERE / 'examples').glob('*.bpl')) + sorted((HERE / 'applications').glob('*.bpl'))
+    sources = (sorted((HERE / 'tests/accept').glob('xdp_nested*.bpl')) if args.nested_options else
+               sorted((HERE / 'examples').glob('*.bpl')) + sorted((HERE / 'applications').glob('*.bpl')))
     if args.examples_only:
         sources = [p for p in sources if p.parent.name == 'examples']
     if args.cgroup_only:
@@ -257,6 +266,8 @@ def main():
         sources = [p for p in sources if p.stem in TRACE_PROGRAMS]
     if args.program:
         sources = [p for p in sources if p.stem == args.program]
+    if args.lb_only:
+        sources = [p for p in sources if p.stem == LB_NAME]
     if args.vlan_only:
         sources = [p for p in sources if p.stem in VLAN_NAMES]
     if args.packet_parsing:
@@ -276,6 +287,10 @@ def main():
             obj = (prebuilt_program if args.prebuilt else compile_program)(compiler, source, out)
             entry['compile'] = 'passed'
             entry['object_sha256'] = hashlib.sha256(obj.read_bytes()).hexdigest()
+            if source.stem == LB_NAME:
+                entry['map_metadata'] = validate_lb(obj)
+                if args.emulate:
+                    entry['emulation'] = 'not_supported'
             if source.stem in MAP_TYPES:
                 entry['map_metadata'] = validate_object(obj, source.stem)
                 if args.emulate:
@@ -288,7 +303,7 @@ def main():
                 entry['attach_metadata'] = validate_cgroup(obj, source.stem)
                 if args.emulate:
                     entry['emulation'] = 'not_supported'
-            if args.emulate and source.stem not in MAP_TYPES and source.stem not in TRACE_PROGRAMS and source.stem not in CGROUP_PROGRAMS:
+            if args.emulate and source.stem not in MAP_TYPES and source.stem not in TRACE_PROGRAMS and source.stem not in CGROUP_PROGRAMS and source.stem != LB_NAME:
                 from emulate import execute, xdp_section
                 entry['emulation'] = 'failed'
                 code = xdp_section(obj, program_type)
@@ -304,6 +319,8 @@ def main():
                 from kernel import Program
                 entry['kernel'] = 'failed'
                 with Program(obj, source.stem) as program:
+                    if source.stem == LB_NAME:
+                        run_lb_cases(program, entry['tests'])
                     if source.stem in CGROUP_PROGRAMS:
                         entry['execution_mode'] = 'live_cgroup_socket_create'
                         run_cgroup_cases(program, source.stem, entry['tests'])
@@ -337,7 +354,7 @@ def main():
         results.append(entry)
     rejections = []
     # Privileged loading consumes the recorded artifacts and does no build work.
-    manifest = {} if args.prebuilt else json.loads((HERE / 'tests/rejections.json').read_text())
+    manifest = {} if (args.prebuilt or args.nested_options) else json.loads((HERE / 'tests/rejections.json').read_text())
     for name, diagnostic in manifest.items():
         source = HERE / 'tests/reject' / (name + '.bpl')
         result = subprocess.run([str(compiler), '-S', '-o', str(out / (name + '.s')), str(source)],
@@ -357,7 +374,7 @@ def main():
     failed = any(x['compile'] != 'passed' or (args.kernel and x['kernel'] != 'passed') for x in results)
     failed |= any(not x['passed'] for x in rejections)
     failed |= args.emulate and any(x['emulation'] != 'passed' and
-                                  not ((x['program'] in MAP_TYPES or x['program'] in TRACE_PROGRAMS) and x.get('map_metadata')
+                                  not ((x['program'] in MAP_TYPES or x['program'] in TRACE_PROGRAMS or x['program'] == LB_NAME) and x.get('map_metadata')
                                        and x['emulation'] == 'not_supported') and
                                   not (x['program'] in CGROUP_PROGRAMS and x.get('attach_metadata')
                                        and x['emulation'] == 'not_supported') for x in results)

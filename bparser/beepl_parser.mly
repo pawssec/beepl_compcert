@@ -24,7 +24,7 @@ open Beepl_ast
 %token FUNTYPE TSTRUCT BYTES
 %token FUNC LET IN IF THEN ELSE 
 %token REF DEREF MASSGN
-%token BAR OSOME ONONE
+%token BAR OSOME ONONE OPTION
 %token SINIT MATCH PBYTES WITH ARROW
 %token TILDE NEG PLUS MINUS MUL DIV MOD AND OR XOR SHL SHR OEQ NEQ LT GT LE GE
 %token CAST
@@ -116,6 +116,10 @@ vararg_flag:
 | NOVARARG { false }
 
 typ:
+  | OPTION LPAREN t = typ RPAREN
+      { match t with
+        | Ptr pt -> Ptr (Otype pt)
+        | _ -> failwith "option(...) expects a pointer or optional pointer type" }
   | BOOLTYPE  { Vtype Tbool }
   | UINT8TYPE { Vtype Tuint8 }
   | INT8TYPE  { Vtype Tint8 }

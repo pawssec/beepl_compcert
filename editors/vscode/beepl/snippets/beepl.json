@@ -1,0 +1,56 @@
+{
+  "Function": {
+    "prefix": "bfun",
+    "body": [
+      "fun ${1:name} (${2:int32 value}) : ${3:int32}, ${4:[]} {",
+      "  ${0:value}",
+      "}"
+    ],
+    "description": "BeePL function with explicit effects"
+  },
+  "Match option": {
+    "prefix": "bmatch",
+    "body": [
+      "match ${1:optional} with",
+      "| none -> ${2:0}",
+      "| some ${3:value} -> ${0:!value}"
+    ],
+    "description": "Exhaustive optional reference match"
+  },
+  "GPL license": {
+    "prefix": "bgpl",
+    "body": [
+      "#section license",
+      "let _license : int8[4] = \"GPL\""
+    ],
+    "description": "eBPF GPL license section"
+  },
+  "XDP entry": {
+    "prefix": "bxdp",
+    "body": [
+      "struct xdp_md {",
+      "  _data : uint32, _data_end : uint32, _data_meta : uint32,",
+      "  _ingress_ifindex : uint32, _rx_queue_index : uint32, _egress_ifindex : uint32",
+      "}",
+      "#section license",
+      "let _license : int8[4] = \"GPL\"",
+      "#ebpf",
+      "#section xdp",
+      "fun ${1:xdp_pass} (struct xdp_md* ctx) : int32, [] {",
+      "  ${0:2}",
+      "}"
+    ],
+    "description": "Minimal XDP_PASS program"
+  },
+  "Map declaration": {
+    "prefix": "bmap",
+    "body": [
+      "#section .maps",
+      "struct ${1:counts} {",
+      "  map_type : uint32[${2:2}], key : uint32, value : ulong,",
+      "  max_entries : uint32[${3:1}]",
+      "}"
+    ],
+    "description": "Typed uint32-to-ulong BPF map"
+  }
+}

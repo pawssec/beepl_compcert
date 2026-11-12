@@ -28,7 +28,7 @@ expr MUL expr // lookahead token appears
 ONONE typ // lookahead token is inherited
       STRUCT IDENT . 
 
-** Conflict (shift/reduce) in state 149.
+** Conflict (shift/reduce) in state 151.
 ** Token involved: COMMA
 ** This state is reached from prog after reading:
 
@@ -43,7 +43,7 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                             (?)
 
-** In state 149, looking ahead at COMMA, reducing production
+** In state 151, looking ahead at COMMA, reducing production
 ** separated_nonempty_list(COMMA,beepl_effect) -> beepl_effect
 ** is permitted because of the following sub-derivation:
 
@@ -51,14 +51,14 @@ FUNTYPE LPAREN loption(separated_nonempty_list(COMMA,typ)) RPAREN COLON loption(
                                                                         separated_nonempty_list(COMMA,beepl_effect) // lookahead token is inherited
                                                                         beepl_effect . 
 
-** In state 149, looking ahead at COMMA, shifting is permitted
+** In state 151, looking ahead at COMMA, shifting is permitted
 ** because of the following sub-derivation:
 
 FUNTYPE LPAREN loption(separated_nonempty_list(COMMA,typ)) RPAREN COLON loption(separated_nonempty_list(COMMA,beepl_effect)) COMMA typ COMMA vararg_flag 
                                                                         separated_nonempty_list(COMMA,beepl_effect) 
                                                                         beepl_effect . COMMA separated_nonempty_list(COMMA,beepl_effect) 
 
-** Conflict (reduce/reduce) in state 183.
+** Conflict (reduce/reduce) in state 187.
 ** Token involved: RPAREN
 ** This state is reached from prog after reading:
 
@@ -73,7 +73,7 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 183, looking ahead at RPAREN, reducing production
+** In state 187, looking ahead at RPAREN, reducing production
 ** const -> UNIT
 ** is permitted because of the following sub-derivation:
 
@@ -81,14 +81,14 @@ LPAREN expr RPAREN // lookahead token appears
        const // lookahead token is inherited
        UNIT . 
 
-** In state 183, looking ahead at RPAREN, reducing production
+** In state 187, looking ahead at RPAREN, reducing production
 ** typ -> UNIT
 ** is permitted because of the following sub-derivation:
 
 LPAREN typ RPAREN expr // lookahead token appears
        UNIT . 
 
-** Conflict (shift/reduce) in state 204.
+** Conflict (shift/reduce) in state 208.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -104,20 +104,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 204, looking ahead at LPAREN, reducing production
+** In state 208, looking ahead at LPAREN, reducing production
 ** expr -> DEREF expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 DEREF expr . 
 
-** In state 204, looking ahead at LPAREN, shifting is permitted
+** In state 208, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 DEREF expr 
       expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 211.
+** Conflict (shift/reduce) in state 215.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -133,20 +133,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 211, looking ahead at LPAREN, reducing production
+** In state 215, looking ahead at LPAREN, reducing production
 ** expr -> expr XOR expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr XOR expr . 
 
-** In state 211, looking ahead at LPAREN, shifting is permitted
+** In state 215, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr XOR expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 213.
+** Conflict (shift/reduce) in state 217.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -162,20 +162,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 213, looking ahead at LPAREN, reducing production
+** In state 217, looking ahead at LPAREN, reducing production
 ** expr -> expr SHR expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr SHR expr . 
 
-** In state 213, looking ahead at LPAREN, shifting is permitted
+** In state 217, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr SHR expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 215.
+** Conflict (shift/reduce) in state 219.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -191,20 +191,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 215, looking ahead at LPAREN, reducing production
+** In state 219, looking ahead at LPAREN, reducing production
 ** expr -> expr PLUS expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr PLUS expr . 
 
-** In state 215, looking ahead at LPAREN, shifting is permitted
+** In state 219, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr PLUS expr 
           expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 217.
+** Conflict (shift/reduce) in state 221.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -220,20 +220,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 217, looking ahead at LPAREN, reducing production
+** In state 221, looking ahead at LPAREN, reducing production
 ** expr -> expr MUL expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr MUL expr . 
 
-** In state 217, looking ahead at LPAREN, shifting is permitted
+** In state 221, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr MUL expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 222.
+** Conflict (shift/reduce) in state 226.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -249,20 +249,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 222, looking ahead at LPAREN, reducing production
+** In state 226, looking ahead at LPAREN, reducing production
 ** expr -> expr MOD expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr MOD expr . 
 
-** In state 222, looking ahead at LPAREN, shifting is permitted
+** In state 226, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr MOD expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 224.
+** Conflict (shift/reduce) in state 228.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -278,20 +278,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 224, looking ahead at LPAREN, reducing production
+** In state 228, looking ahead at LPAREN, reducing production
 ** expr -> expr DIV expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr DIV expr . 
 
-** In state 224, looking ahead at LPAREN, shifting is permitted
+** In state 228, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr DIV expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 226.
+** Conflict (shift/reduce) in state 230.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -307,20 +307,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 226, looking ahead at LPAREN, reducing production
+** In state 230, looking ahead at LPAREN, reducing production
 ** expr -> expr MINUS expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr MINUS expr . 
 
-** In state 226, looking ahead at LPAREN, shifting is permitted
+** In state 230, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr MINUS expr 
            expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 228.
+** Conflict (shift/reduce) in state 232.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -336,20 +336,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 228, looking ahead at LPAREN, reducing production
+** In state 232, looking ahead at LPAREN, reducing production
 ** expr -> expr SHL expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr SHL expr . 
 
-** In state 228, looking ahead at LPAREN, shifting is permitted
+** In state 232, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr SHL expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 230.
+** Conflict (shift/reduce) in state 234.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -365,20 +365,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 230, looking ahead at LPAREN, reducing production
+** In state 234, looking ahead at LPAREN, reducing production
 ** expr -> expr OEQ expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr OEQ expr . 
 
-** In state 230, looking ahead at LPAREN, shifting is permitted
+** In state 234, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr OEQ expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 232.
+** Conflict (shift/reduce) in state 236.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -394,20 +394,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 232, looking ahead at LPAREN, reducing production
+** In state 236, looking ahead at LPAREN, reducing production
 ** expr -> expr LT expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr LT expr . 
 
-** In state 232, looking ahead at LPAREN, shifting is permitted
+** In state 236, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr LT expr 
         expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 234.
+** Conflict (shift/reduce) in state 238.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -423,20 +423,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 234, looking ahead at LPAREN, reducing production
+** In state 238, looking ahead at LPAREN, reducing production
 ** expr -> expr LE expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr LE expr . 
 
-** In state 234, looking ahead at LPAREN, shifting is permitted
+** In state 238, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr LE expr 
         expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 236.
+** Conflict (shift/reduce) in state 240.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -452,20 +452,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 236, looking ahead at LPAREN, reducing production
+** In state 240, looking ahead at LPAREN, reducing production
 ** expr -> expr GT expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr GT expr . 
 
-** In state 236, looking ahead at LPAREN, shifting is permitted
+** In state 240, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr GT expr 
         expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 238.
+** Conflict (shift/reduce) in state 242.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -481,20 +481,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 238, looking ahead at LPAREN, reducing production
+** In state 242, looking ahead at LPAREN, reducing production
 ** expr -> expr GE expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr GE expr . 
 
-** In state 238, looking ahead at LPAREN, shifting is permitted
+** In state 242, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr GE expr 
         expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 240.
+** Conflict (shift/reduce) in state 244.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -510,20 +510,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 240, looking ahead at LPAREN, reducing production
+** In state 244, looking ahead at LPAREN, reducing production
 ** expr -> expr NEQ expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr NEQ expr . 
 
-** In state 240, looking ahead at LPAREN, shifting is permitted
+** In state 244, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr NEQ expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 242.
+** Conflict (shift/reduce) in state 246.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -539,20 +539,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 242, looking ahead at LPAREN, reducing production
+** In state 246, looking ahead at LPAREN, reducing production
 ** expr -> expr AND expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr AND expr . 
 
-** In state 242, looking ahead at LPAREN, shifting is permitted
+** In state 246, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr AND expr 
          expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 244.
+** Conflict (shift/reduce) in state 248.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -568,20 +568,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 244, looking ahead at LPAREN, reducing production
+** In state 248, looking ahead at LPAREN, reducing production
 ** expr -> expr OR expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr OR expr . 
 
-** In state 244, looking ahead at LPAREN, shifting is permitted
+** In state 248, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr OR expr 
         expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 246.
+** Conflict (shift/reduce) in state 250.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -597,20 +597,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 246, looking ahead at LPAREN, reducing production
+** In state 250, looking ahead at LPAREN, reducing production
 ** expr -> expr MASSGN expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 expr MASSGN expr . 
 
-** In state 246, looking ahead at LPAREN, shifting is permitted
+** In state 250, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 expr MASSGN expr 
             expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 263.
+** Conflict (shift/reduce) in state 267.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -626,20 +626,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 263, looking ahead at XOR, shifting is permitted
+** In state 267, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 IF expr THEN expr ELSE expr 
                        expr . XOR expr 
 
-** In state 263, looking ahead at XOR, reducing production
+** In state 267, looking ahead at XOR, reducing production
 ** expr -> IF expr THEN expr ELSE expr
 ** is permitted because of the following sub-derivation:
 
 expr XOR expr // lookahead token appears
 IF expr THEN expr ELSE expr . 
 
-** Conflict (shift/reduce) in state 269.
+** Conflict (shift/reduce) in state 273.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -655,20 +655,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 269, looking ahead at XOR, shifting is permitted
+** In state 273, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 LET IDENT COLON typ EQ expr IN expr 
                                expr . XOR expr 
 
-** In state 269, looking ahead at XOR, reducing production
+** In state 273, looking ahead at XOR, reducing production
 ** expr -> LET IDENT COLON typ EQ expr IN expr
 ** is permitted because of the following sub-derivation:
 
 expr XOR expr // lookahead token appears
 LET IDENT COLON typ EQ expr IN expr . 
 
-** Conflict (shift/reduce) in state 272.
+** Conflict (shift/reduce) in state 276.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -684,20 +684,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 272, looking ahead at XOR, shifting is permitted
+** In state 276, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 LET IDENT COLON typ EQ array_elems IN expr 
                                       expr . XOR expr 
 
-** In state 272, looking ahead at XOR, reducing production
+** In state 276, looking ahead at XOR, reducing production
 ** expr -> LET IDENT COLON typ EQ array_elems IN expr
 ** is permitted because of the following sub-derivation:
 
 expr XOR expr // lookahead token appears
 LET IDENT COLON typ EQ array_elems IN expr . 
 
-** Conflict (shift/reduce) in state 275.
+** Conflict (shift/reduce) in state 279.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -713,20 +713,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 275, looking ahead at LPAREN, reducing production
+** In state 279, looking ahead at LPAREN, reducing production
 ** expr -> LPAREN typ RPAREN expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 LPAREN typ RPAREN expr . 
 
-** In state 275, looking ahead at LPAREN, shifting is permitted
+** In state 279, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 LPAREN typ RPAREN expr 
                   expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 286.
+** Conflict (shift/reduce) in state 290.
 ** Token involved: RBRACK
 ** This state is reached from prog after reading:
 
@@ -744,19 +744,19 @@ annotations LET IDENT COLON typ EQ expr
                                                                PBYTES IDENT COLON typ bytes_fields ARROW expr 
                                                                                       (?)
 
-** In state 286, looking ahead at RBRACK, shifting is permitted
+** In state 290, looking ahead at RBRACK, shifting is permitted
 ** because of the following sub-derivation:
 
 LBRACK . RBRACK 
 
-** In state 286, looking ahead at RBRACK, reducing production
+** In state 290, looking ahead at RBRACK, reducing production
 ** loption(separated_nonempty_list(COMMA,bytes_field)) ->
 ** is permitted because of the following sub-derivation:
 
 LBRACK loption(separated_nonempty_list(COMMA,bytes_field)) RBRACK // lookahead token appears
        . 
 
-** Conflict (shift/reduce) in state 300.
+** Conflict (shift/reduce) in state 304.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -772,7 +772,7 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 300, looking ahead at XOR, reducing production
+** In state 304, looking ahead at XOR, reducing production
 ** clause -> PBYTES IDENT COLON typ bytes_fields ARROW expr
 ** is permitted because of the following sub-derivation:
 
@@ -781,7 +781,7 @@ MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) // lookahead tok
                             clause // lookahead token is inherited
                             PBYTES IDENT COLON typ bytes_fields ARROW expr . 
 
-** In state 300, looking ahead at XOR, shifting is permitted
+** In state 304, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) 
@@ -789,7 +789,7 @@ MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause)
                             PBYTES IDENT COLON typ bytes_fields ARROW expr 
                                                                       expr . XOR expr 
 
-** Conflict (shift/reduce) in state 304.
+** Conflict (shift/reduce) in state 308.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -805,7 +805,7 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 304, looking ahead at XOR, reducing production
+** In state 308, looking ahead at XOR, reducing production
 ** clause -> OSOME IDENT ARROW expr
 ** is permitted because of the following sub-derivation:
 
@@ -814,7 +814,7 @@ MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) // lookahead tok
                             clause // lookahead token is inherited
                             OSOME IDENT ARROW expr . 
 
-** In state 304, looking ahead at XOR, shifting is permitted
+** In state 308, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) 
@@ -822,7 +822,7 @@ MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause)
                             OSOME IDENT ARROW expr 
                                               expr . XOR expr 
 
-** Conflict (shift/reduce) in state 307.
+** Conflict (shift/reduce) in state 311.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -838,7 +838,7 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 307, looking ahead at XOR, reducing production
+** In state 311, looking ahead at XOR, reducing production
 ** clause -> ONONE ARROW expr
 ** is permitted because of the following sub-derivation:
 
@@ -847,7 +847,7 @@ MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) // lookahead tok
                             clause // lookahead token is inherited
                             ONONE ARROW expr . 
 
-** In state 307, looking ahead at XOR, shifting is permitted
+** In state 311, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) 
@@ -855,7 +855,7 @@ MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause)
                             ONONE ARROW expr 
                                         expr . XOR expr 
 
-** Conflict (shift/reduce) in state 309.
+** Conflict (shift/reduce) in state 313.
 ** Token involved: BAR
 ** This state is reached from prog after reading:
 
@@ -871,7 +871,7 @@ annotations LET IDENT COLON typ EQ expr
                                    MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) 
                                                                (?)
 
-** In state 309, looking ahead at BAR, reducing production
+** In state 313, looking ahead at BAR, reducing production
 ** separated_nonempty_list(BAR,clause) -> clause
 ** is permitted because of the following sub-derivation:
 
@@ -880,7 +880,7 @@ ONONE ARROW expr // lookahead token is inherited
             MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) // lookahead token is inherited
                                         clause . 
 
-** In state 309, looking ahead at BAR, shifting is permitted
+** In state 313, looking ahead at BAR, shifting is permitted
 ** because of the following sub-derivation:
 
 clause 
@@ -888,7 +888,7 @@ ONONE ARROW expr
             MATCH expr WITH option(BAR) separated_nonempty_list(BAR,clause) 
                                         clause . BAR separated_nonempty_list(BAR,clause) 
 
-** Conflict (shift/reduce) in state 312.
+** Conflict (shift/reduce) in state 316.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -904,20 +904,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 312, looking ahead at LPAREN, reducing production
+** In state 316, looking ahead at LPAREN, reducing production
 ** expr -> MINUS expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 MINUS expr . 
 
-** In state 312, looking ahead at LPAREN, shifting is permitted
+** In state 316, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 MINUS expr 
       expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 313.
+** Conflict (shift/reduce) in state 317.
 ** Tokens involved: XOR SHR SHL PLUS OR OEQ NEQ MUL MOD MINUS MASSGN LT LPAREN LE GT GE DOT DIV AND
 ** The following explanations concentrate on token XOR.
 ** This state is reached from prog after reading:
@@ -933,20 +933,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 313, looking ahead at XOR, shifting is permitted
+** In state 317, looking ahead at XOR, shifting is permitted
 ** because of the following sub-derivation:
 
 OSOME expr 
       expr . XOR expr 
 
-** In state 313, looking ahead at XOR, reducing production
+** In state 317, looking ahead at XOR, reducing production
 ** expr -> OSOME expr
 ** is permitted because of the following sub-derivation:
 
 expr XOR expr // lookahead token appears
 OSOME expr . 
 
-** Conflict (shift/reduce) in state 314.
+** Conflict (shift/reduce) in state 318.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -962,20 +962,20 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 314, looking ahead at LPAREN, reducing production
+** In state 318, looking ahead at LPAREN, reducing production
 ** expr -> REF expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 REF expr . 
 
-** In state 314, looking ahead at LPAREN, shifting is permitted
+** In state 318, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 REF expr 
     expr . LPAREN separated_nonempty_list(COMMA,expr) RPAREN 
 
-** Conflict (shift/reduce) in state 317.
+** Conflict (shift/reduce) in state 321.
 ** Tokens involved: LPAREN DOT
 ** The following explanations concentrate on token LPAREN.
 ** This state is reached from prog after reading:
@@ -991,14 +991,14 @@ toplevel
 annotations LET IDENT COLON typ EQ expr 
                                    (?)
 
-** In state 317, looking ahead at LPAREN, reducing production
+** In state 321, looking ahead at LPAREN, reducing production
 ** expr -> TILDE expr
 ** is permitted because of the following sub-derivation:
 
 expr LPAREN separated_nonempty_list(COMMA,expr) RPAREN // lookahead token appears
 TILDE expr . 
 
-** In state 317, looking ahead at LPAREN, shifting is permitted
+** In state 321, looking ahead at LPAREN, shifting is permitted
 ** because of the following sub-derivation:
 
 TILDE expr 

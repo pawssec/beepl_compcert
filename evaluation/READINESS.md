@@ -17,8 +17,8 @@ PID filtering and before/after attachment controls; see the
 [tracing report](results/archive/kernel-tracing.json). Its
 source and object hashes match the tested files; the archived report retains
 the compiler hash used for that run. Total coverage is 305 packet/map cases
-and 120 live checks, including the 80 cgroup checks below. All 40 rejection tests and
-29 harness tests pass; all 290 userspace instruction cases pass.
+and 120 live checks, including the 80 cgroup checks below. All 43 rejection tests and
+33 harness tests pass; all 290 userspace instruction cases pass.
 
 All four socket-create cgroup examples passed verifier loading and all 80 live
 checks on Linux 7.0.0-42-generic. Both IPv4 and IPv6 TCP/UDP paths were exercised.
@@ -37,6 +37,18 @@ and compiler hashes match the current files; see the
 do not add dynamic header traversal, packet mutation, or hardware-stripped VLAN
 metadata support. The tested collection does not establish arbitrary eBPF support.
 
+A new TC UDP load-balancer prototype raises the compiled collection to 49 programs
+(45 examples, four applications). It adds fixed four-byte packet load/store
+helpers and TC redirection. It passed verifier loading and all 14 live two-backend checks, including cleanup.
+The first 16 packet cases passed; an undersized IPv4 fixture was then rejected
+by the kernel test harness before BPF execution. The short-frame fixtures are
+fixed. Rerun `sudo make -C evaluation/examples kernel-lb-check` for the full
+44-case result; the application bytecode is unchanged. See [the application guide](LOAD_BALANCER.md).
+Kernel execution evidence now covers 49 programs, though the load-balancer
+packet suite remains incomplete. The previously reported totals cover the
+original 48 programs; the new live run adds 14 passing checks. This prototype adds no NAT,
+connection tracking, dynamic packet cursors, or production performance evidence.
+
 ## Language coverage in this collection
 
 | Feature | Evidence |
@@ -52,7 +64,7 @@ metadata support. The tested collection does not establish arbitrary eBPF suppor
 | Nullable references, exhaustive matching | option_some, option_none; invalid optional accesses rejected |
 | Helper calls/effects | clock, random; undeclared effects rejected |
 | Bounded scalar-header packet parsing | Ethernet, IPv4 TTL/fragments, UDP port, TCP flags; IPv6 guard and UDP filter applications |
-| Unsafe constructs rejected | 40 fixtures: arity/types, recursion, pointer return, invalid schemas and others |
+| Unsafe constructs rejected | 43 fixtures: arity/types, recursion, pointer return, invalid schemas and others |
 
 This is coverage of specific test cases, not a proof of every input or feature.
 The instruction interpreter is limited, models three helpers, and cannot validate
@@ -68,7 +80,7 @@ See the kernel's [program types and ELF sections table](https://docs.kernel.org/
 | --- | --- |
 | XDP packet processing | 26 packet-processing programs kernel-tested (255 cases), including fixed VLAN/QinQ layouts; no variable-header parser |
 | Socket filters | Four programs kernel-tested (12 cases); accept/drop live-tested (10 checks); packet helpers and general context-layout validation remain |
-| TC classifier/action, TCX | Seven SCHED_CLS programs passed 23 kernel cases; pass/drop/IPv4 live-tested (15 checks). Packet parsing/mutation and TCX remain |
+| TC classifier/action, TCX | Seven SCHED_CLS programs passed 23 kernel cases; pass/drop/IPv4 live-tested (15 checks). Fixed-buffer packet copies, L2 rewriting and redirect are live-tested by the load balancer; the corrected packet suite awaits rerun; dynamic parsing and TCX remain |
 | Raw tracepoints | Scalar `sys_enter` context, PID helper, counter and histogram implemented; Both programs verifier-accepted; all 15 live checks passed. Register pointers remain inaccessible |
 | Ordinary tracepoints | Need separate context schemas, helper contracts and event tests |
 | Kprobe/kretprobe, uprobe/uretprobe | Need architecture-correct register contexts and safe reads |
@@ -98,9 +110,11 @@ submission and discard need explicit lifetime handling; see the
    compiler/object hashes, and pass/fail results.
 4. Execute positive, negative and boundary cases with observable assertions;
    attachment or verifier acceptance alone is insufficient.
-5. Test resource limits and update the formal development. Existing BeePL
-   `Admitted` results prevent claiming completed formal soundness merely because
-   `make` passes.
+5. Test resource limits and update the formal development. Source type soundness
+   for coherent initialized states is checked separately with `make soundness-check`
+   (see [PROOFS.md](../PROOFS.md)). Compiler correspondence, external-helper/kernel
+   contracts, and general loader adequacy remain separate obligations; a successful
+   `make` or source safety proof does not establish those claims.
 
 To repeat the tracing checks, after `make -C evaluation/examples check`:
 

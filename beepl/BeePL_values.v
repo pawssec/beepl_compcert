@@ -103,6 +103,38 @@ match v1, v2 with
 | _, _ => Error (msg "The value should be int or long")
 end. 
 
+(* Loop bounds use mathematical integers after interpreting their declared
+   width and signedness. The iteration count itself must never wrap. *)
+Definition loop_integer_value (t : type) (v : value) : res Z :=
+  match t, v with
+  | Vtype (Tint sz sg _), Vint i =>
+      let normalized :=
+        match sz, sg with
+        | I8, Signed => Int.sign_ext 8 i
+        | I8, Unsigned => Int.zero_ext 8 i
+        | I16, Signed => Int.sign_ext 16 i
+        | I16, Unsigned => Int.zero_ext 16 i
+        | I32, _ => i
+        | IBool, _ => if Int.eq i Int.zero then Int.zero else Int.one
+        end in
+      OK (match sg with Signed => Int.signed normalized | Unsigned => Int.unsigned normalized end)
+  | Vtype (Tlong sg _), Vint64 i =>
+      OK (match sg with Signed => Int64.signed i | Unsigned => Int64.unsigned i end)
+  | _, _ => Error (msg "Loop bounds require matching integer values")
+  end.
+
+Definition inclusive_loop_iterations (d : dir) (first last : Z) : Z :=
+  Z.max 0 (match d with Up => last - first + 1 | Down => first - last + 1 end).
+
+Definition compute_loop_iterations (d : dir) (t : type) (first last : value) : res Z :=
+  match loop_integer_value t first with
+  | Error message => Error message
+  | OK low => match loop_integer_value t last with
+    | Error message => Error message
+    | OK high => OK (inclusive_loop_iterations d low high)
+    end
+  end.
+
 Definition is_vloc (v : value) : bool :=
 match v with 
 | Vunit => false
@@ -195,6 +227,10 @@ match v, t with
 | Vint i, Vtype (Tint sz s a) => True 
 | Vint64 i, Vtype (Tlong s a) => True 
 | Vloc p ofs, Ptrtype (Reftype b a) => True (* targeting only 64 bit arch *)
+| Vloc p ofs, Atype elem len a => True
+| Vloc p ofs, Stype id a => True
+| Vloc p ofs, Bytes => True
+| Vloc p ofs, Ftype args effects result variadic => ofs = Ptrofs.zero
 | Voption v, Ptrtype (Otype t) => True
 | _, _ => False
 end.

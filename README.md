@@ -77,3 +77,33 @@ When compiling **for the `ebpf64` target**, add the `-bpfmap` flag to `ccomp` (e
 Add `-typecheck` to your command line to run the typechecker.
 
 Full example: `./ccomp ../test.b -o test -typecheck`
+
+
+## BeePL source type soundness
+
+The Coq development proves progress, preservation, and finite-execution safety
+for the formalized BeePL source semantics from initialized, coherent runtime
+states. See [PROOFS.md](PROOFS.md) for exact theorem statements, preconditions,
+loaded-program evidence, and remaining compiler/helper/loader obligations.
+
+```sh
+make -j4 soundness-check
+# Also independently check the compiled proof objects with the Coq kernel:
+make -j4 soundness-kernel-check
+```
+
+## BeePL evaluation and editor support
+
+The [evaluation suite](evaluation/README.md) contains runnable BeePL examples,
+applications, saved kernel-test evidence, and Makefile commands. See the
+[readiness report](evaluation/READINESS.md) for supported profiles and gaps.
+
+The [VS Code extension](editors/vscode/beepl/README.md) provides `.bpl` syntax
+highlighting and snippets. Build and install locally:
+
+```sh
+make -C editors/vscode/beepl package
+code --install-extension editors/vscode/beepl/dist/beepl-language-0.1.0.vsix
+```
+
+Marketplace publication is not yet configured.

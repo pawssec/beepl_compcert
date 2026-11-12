@@ -5,11 +5,11 @@ CompCert's **ebpf64** backend → LLVM's assembler → a Linux eBPF ELF object.
 The compiler build is isolated in `.build/compiler`; the repository's native
 compiler configuration is preserved.
 
-**Status:** 48 programs compile (45 examples and three applications). The original
+**Status:** 49 programs compile (45 examples and four applications). The original
 37 pass 290 userspace instruction cases; five map programs and two new syscall
 tracers pass libbpf map-metadata validation and are not emulated. Four
 cgroup socket policies pass program/attach metadata validation and are not
-emulated. All 40 rejection tests and 29 harness tests pass. Native and isolated eBPF compiler builds pass.
+emulated. All 43 rejection tests and 33 harness tests pass. Native and isolated eBPF compiler builds pass.
 
 Packet/map kernel evidence covers 42 programs and 305 cases: 26 XDP programs (255),
 four socket filters (12), seven TC programs (23), and five typed-map programs (15).
@@ -26,6 +26,34 @@ policies passed all 80 IPv4/IPv6 live checks. The two VLAN classifiers also pass
 suite supersedes the earlier 30-case IPv4 suite in this total.
 This is not support for all eBPF programs or a completed formal soundness proof.
 
+## UDP load-balancer application
+
+[tc_udp_lb](applications/tc_udp_lb.bpl) is a two-backend IPv4 UDP direct-server-return
+prototype: it selects a backend, rewrites Ethernet addresses, redirects the
+packet, and supports live mode configuration through a map. It preserves the
+VIP, UDP port and checksums. The [complete run guide](LOAD_BALANCER.md) describes
+the topology, narrow packet profile, helper restrictions and remaining limitations.
+
+```sh
+sudo make -C evaluation/examples kernel-lb-check
+sudo make -C evaluation/examples lb-live
+```
+
+The first command tests 44 packet cases; the second creates four temporary
+namespaces and checks real UDP requests/replies in 14 assertions. Reports are
+`results/kernel-lb.json` and `results/lb-live.json`. The program passed verifier loading and all 14 live checks; see the
+[archived live report](results/archive/lb-live.json). The first 16 packet cases
+passed, then the test runner rejected an undersized IPv4 fixture before BPF ran.
+The short-frame fixtures are corrected; rerun `kernel-lb-check` for the complete
+44-case result. No program rebuild or live rerun is needed. It is not emulated.
+
+## VS Code highlighting
+
+A tested declarative extension is available in [editors/vscode/beepl](../editors/vscode/beepl).
+It highlights `.bpl` files and provides bracket pairing, block comments and snippets.
+Build/install the VSIX using that directory's guide. It has no language server or
+compiler diagnostics. Marketplace publication is deferred; VSIX sharing works now.
+
 ## Collection by category
 
 Counts include runnable `.bpl` files, not negative typechecker fixtures.
@@ -36,13 +64,15 @@ Counts include runnable `.bpl` files, not negative typechecker fixtures.
 | XDP packet parsing and filtering | 7 | 2 |
 | XDP typed maps | 5 | 0 |
 | Socket filters | 4 | 0 |
-| TC traffic control | 7 | 0 |
+| TC traffic control | 7 | 1 |
 | Raw syscall tracing | 1 | 1 |
 | Cgroup socket creation policies | 4 | 0 |
-| **Total** | **45** | **3** |
+| **Total** | **45** | **4** |
 
-Applications: `ipv6_guard`, `udp_port_filter`, and `syscall_histogram`.
-All 48 programs have saved passing kernel evidence, including the VLAN classifiers.
+Applications: `ipv6_guard`, `udp_port_filter`, `syscall_histogram`, and `tc_udp_lb`.
+The original 48 programs have saved passing kernel evidence, including the VLAN
+classifiers. The load-balancer application also passed all 14 live checks; its corrected
+packet suite awaits a complete rerun.
 
 ## On-wire VLAN and QinQ filtering
 

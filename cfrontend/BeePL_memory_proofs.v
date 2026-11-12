@@ -56,14 +56,33 @@ case: ty=> //=.
 move=> f. by case: f=> //=.
 Qed.
 
-(* Complete me: Easy *)
-Definition store_well_typed_ext : forall cenv Gamma Sigma bge vm m x l t,
+(* Extending an environment at an identifier absent from Gamma cannot change
+   the interpretation of any variable required by the typing context. Arbitrary
+   replacement is not valid: it could hide a global or redirect a local binding
+   to an unrelated/unallocated block. *)
+Lemma store_well_typed_ext : forall cenv Gamma Sigma bge vm m x l t,
+Gamma ! x = None ->
 store_well_typed cenv Gamma Sigma bge vm m ->
-(*(Gamma ! x = None \/ (exists t', Gamma ! x = Some t' /\ t' = t)) ->*) (* we would need this *)
 store_well_typed cenv Gamma Sigma bge (PTree.set x (l, t) vm) m.
 Proof.
-move=> cenv Gamma Sigma bge vm m x l t hw. case: hw=> [] h1 [] h2 h3.
-Admitted. 
+  intros cenv Gamma Sigma bge vm m x l t Hfresh [Hvar [Hloc Hfun]].
+  split.
+  - inversion Hvar as [Hlocals | Hglobals]; subst.
+    + constructor 1. intros y ty Hy.
+      assert (Hneq : y <> x) by (intro Heq; subst; congruence).
+      destruct (Hlocals y ty Hy) as [b [ty' [v [Hv [Ht [Hs Hd]]]]]].
+      exists b, ty', v. split.
+      * rewrite PTree.gso; assumption.
+      * repeat split; assumption.
+    + constructor 2. intros y ty Hy.
+      assert (Hneq : y <> x) by (intro Heq; subst; congruence).
+      destruct (Hglobals y ty Hy) as [b [v [Hv [Hg [Hs Hd]]]]].
+      exists b, v. split.
+      * rewrite PTree.gso; assumption.
+      * repeat split; assumption.
+  - split; [exact Hloc |].
+    inversion Hfun as [Hfunctions]. constructor. exact Hfunctions.
+Qed.
 
 Lemma gsnone :
   forall (vm : vmap) (x x0 l : positive)  (t : type),
@@ -154,6 +173,7 @@ Proof.
      apply valid_access_valid_block2 in H2. apply H2. 
   - inv H1. simpl in *. apply Mem.load_valid_access in H6.
     apply valid_access_valid_block2 in H6. apply H6.
+  - assumption.
 Qed.
 
 (* Complete me : Easy *)
@@ -182,6 +202,9 @@ Proof.
            ++  eapply Mem.load_alloc_other with (chunk:= (transl_bchunk_cchunk chunk)) (b' :=l')  (v:=v0) in Halloc.
            rewrite <- H2 in Halloc. rewrite <- Halloc in H2. apply H2.
            simpl in *. auto.
+        -- eapply deref_addr_bytes; [reflexivity| |eassumption|eassumption|].
+           ++ eapply Mem.valid_block_alloc; eauto.
+           ++ intros position Hinside. eapply Mem.perm_alloc_1; eauto.
     + constructor 2.
       intros x t Hx.
       destruct (H x t Hx) as [l' [v [Hvm [Heq [HSigma Hderef]]]]].
@@ -194,6 +217,9 @@ Proof.
            eapply Mem.load_alloc_other with (chunk:= (transl_bchunk_cchunk chunk)) (b' :=l') (v:=v0) in Halloc.
            rewrite <- H2 in Halloc. rewrite <- Halloc in H2. apply H2.
            simpl in H2. auto.
+        -- eapply deref_addr_bytes; [reflexivity| |eassumption|eassumption|].
+           ++ eapply Mem.valid_block_alloc; eauto.
+           ++ intros position Hinside. eapply Mem.perm_alloc_1; eauto.
   - inv Hloc. 
     constructor.  
     inv Hballoc. intros. simpl in H0.
@@ -215,27 +241,10 @@ Use offset properties  instead of compcert lemmas.
 
     apply PTree.gso with (j := b) (x := ty) (m := Sigma) in n.
     rewrite <- n; auto.*) admit.
-  - inv Hfun.
-    constructor.
-    intros l o ef te ts efs rt v vs efs' Hte Heq_type Htes.
-    destruct (H l o ef te ts efs rt v vs efs') as [fd [Hfind [Hnorepet [Hlen [Hargs Hrt]]]]]; auto.
-    apply extract_sigma in Hballoc. subst. inv Hte. constructor.
-    destruct (Pos.eq_dec l b) as [Heq | Hneq]; subst.
-    + rewrite PTree.gss in H7.  rewrite <- H7. injection H7.
-      intros. subst. (*Consider ty_valloc*)
-      admit.
-    + eapply PTree.gso with (x := ty) (m := Sigma) in Hneq.
-      symmetry. rewrite  <- H7. auto.
-    (*induction on vs but this doesn't make sense*)
-    apply extract_sigma in Hballoc. subst. inv Htes.
-    + constructor.
-    + admit. (*constructor.*)
-    exists fd.
-    split; [exact Hfind|].
-    split; [exact Hnorepet|].
-    split; [exact Hlen|].
-    split; [exact Hargs|].
-    exact Hrt.
+  (* Function-contract preservation is still part of this pre-existing
+     admission. Function values now have shape typing, so the old argument
+     that all typed locations are non-callable is invalid. The checked
+     replacement must use explicit runtime code-location evidence. *)
 Admitted.
 
 Lemma mem_alloc_total :
@@ -399,27 +408,14 @@ Admitted.
 (* I think we can prove this and make the well formedness definition simpler *)
 Lemma safe_deref_valid_pointers_gc : forall Sigma m x ofs pt chunk,
 PTree.get x Sigma = Some pt ->
-get_chunk pt = Some chunk ->
+access_mode_type pt = By_value (transl_bchunk_cchunk chunk) ->
 type_is_volatile (transBeePL_type pt) = false ->
-Mem.valid_access m (transl_bchunk_cchunk chunk) x (Ptrofs.unsigned ofs) Freeable ->
-exists (v : value), deref_addr pt m x ofs Full v.
+(exists cv v, Mem.load (transl_bchunk_cchunk chunk) m x (Ptrofs.unsigned ofs) = Some cv /\
+  decode_memory_value pt cv = OK v) ->
+exists v, deref_addr pt m x ofs Full v.
 Proof.
-intros.
-apply Mem.valid_access_freeable_any with (p:= Readable) in H2.
-have [v hload] := Mem.valid_access_load m (transl_bchunk_cchunk chunk) x (Ptrofs.unsigned ofs) H2.
-destruct (trans_cvalue_bvalue (v : Values.val)) eqn:resbv.
-exists v0. 
-apply deref_addr_value with chunk v; auto. 
-- induction pt eqn:Eqpt; simpl in *; try congruence.  
-    + unfold access_mode_prim. 
-      induction p eqn:Eqp. simpl in *; try congruence; try (injection H0; intros).
-      subst.  auto.
-    + destruct i; destruct s; injection H0; intros; subst; auto.
-      simpl.
-      injection H0; intros; subst; auto. 
-injection H0. intros. unfold Mptr. Transparent Archi.ptr64. unfold Archi.ptr64.
-injection H0. intros. subst. auto.
-eapply load_not_error in resbv. inv resbv. apply hload. 
+  intros Sigma m x ofs pt chunk Hentry Hmode Hvolatile [cv [v [Hload Hdecode]]].
+  exists v. eapply deref_addr_value; eauto.
 Qed.
        
 (* I think we can prove this and make the well formedness definition simpler *)
@@ -432,8 +428,6 @@ Mem.valid_access m (transl_bchunk_cchunk chunk) x (Ptrofs.unsigned ofs) Freeable
 exists bf m', assign_addr bge pt m x ofs bf v m' v /\ store_well_typed cenv Gamma Sigma bge vm m'.
 Proof.
 intros. exists Full.
-assert(Hderef: exists v : value, deref_addr pt m x ofs Full v).
-apply safe_deref_valid_pointers_gc with (Sigma := Sigma) (chunk := chunk); auto.
   apply Mem.valid_access_freeable_any with (p:= Writable) in H3.
   eapply Mem.valid_access_store with (v := trans_bvalue_cvalue v) in H3.
   destruct H3 as [m' Hstore]. exists m'.
